@@ -330,8 +330,13 @@ def index_page(runs: list[dict]) -> None:
 
     # ── Sortierbares Leaderboard: Stimme-als-Zeilen, Name → HF-Card, Bestwert je Spalte grün ──
     def _hf(tm):
-        base = str(tm).rstrip("/").rsplit("/", 1)[-1]          # '…Qwen--Qwen3-TTS-…' → 'Qwen--Qwen3-TTS-…'
-        return "https://huggingface.co/" + base.replace("--", "/", 1) if "--" in base else ""
+        raw = str(tm).strip()
+        for seg in raw.split("/"):                              # 'owner--model'-Segment im Pfad finden
+            if "--" in seg:
+                return "https://huggingface.co/" + seg.replace("--", "/", 1)
+        if re.match(r"^[\w.-]+/[\w.-]+$", raw):                 # direkte owner/model-Form (z.B. Voxtral)
+            return "https://huggingface.co/" + raw
+        return ""
     _lb_cols = [("WER (Cap 1.0)", lambda r: r["summary"].get("wer_capped_mean", r["summary"].get("wer_mean"))),
                 ("WER ungekappt", lambda r: r["summary"].get("wer_mean")),
                 ("WER Whisper", lambda r: (r["rescore"] or {}).get("wer_judge1_mean")),
