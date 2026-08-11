@@ -1,6 +1,7 @@
 <!doctype html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Qwen3-TTS-12Hz-1.7B-CustomVoice · aiden</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb3V0aEJ5dGUiPgogIDx0aXRsZT5Tb3V0aEJ5dGU8L3RpdGxlPgogIDxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iIzA2MEMwQSIvPgogIDx0ZXh0IHg9IjIiIHk9IjIzIgogICAgICAgIGZvbnQtZmFtaWx5PSInQ291cmllciBOZXcnLCBDb25zb2xhcywgJ1NGIE1vbm8nLCBtb25vc3BhY2UiCiAgICAgICAgZm9udC1zaXplPSIxNiIKICAgICAgICBmb250LXdlaWdodD0iNzAwIgogICAgICAgIGxldHRlci1zcGFjaW5nPSIwLjUiPgogICAgPHRzcGFuIGZpbGw9IiNENEVERTAiPlM8L3RzcGFuPjx0c3BhbiBmaWxsPSIjMDBFNjc2Ij4uPC90c3Bhbj48dHNwYW4gZmlsbD0iI0Q0RURFMCI+QjwvdHNwYW4+CiAgPC90ZXh0PgogIDxyZWN0IHg9IjIiIHk9IjI2IiB3aWR0aD0iMjgiIGhlaWdodD0iMS41IiBmaWxsPSIjMDBFNjc2IiBvcGFjaXR5PSIwLjQiLz4KPC9zdmc+Cg==">
 <style>
  :root{--bg:#060C0A;--bg-raised:#0A1410;--bg-card:#0E1A14;--border:#162A1E;--border-hi:#1A5C38;
    --green:#00E676;--green-dim:#00994A;--amber:#F59E0B;--text:#D4EDE0;--text-muted:#5E8A72;--text-dim:#2E5040;
@@ -42,8 +43,15 @@
  footer .wm{font-family:var(--mono);font-weight:700;letter-spacing:1px;color:var(--text)}
  footer .wm .dot{color:var(--green)}
  audio{height:2rem;vertical-align:middle;margin:.2rem .4rem .2rem 0}
+ @keyframes scanline{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+ .scanline{position:fixed;left:0;top:0;width:100%;height:80px;background:linear-gradient(to bottom,transparent,rgba(0,230,118,.03) 40%,rgba(0,230,118,.07) 50%,rgba(0,230,118,.03) 60%,transparent);pointer-events:none;z-index:0;animation:scanline 8s linear infinite;will-change:transform}
+ @media(prefers-reduced-motion:reduce){.scanline{display:none}}
+ table.sortable th{cursor:pointer;user-select:none}
+ table.sortable th::after{content:' ';opacity:.35;font-size:.75em}
+ table.sortable th[aria-sort=ascending]::after{content:' \25B2';opacity:.9}
+ table.sortable th[aria-sort=descending]::after{content:' \25BC';opacity:.9}
 </style></head><body>
-<div class="grid-bg"></div><div class="wrap">
+<div class="grid-bg"></div><div class="scanline"></div><div class="wrap">
 <header class="masthead"><a class="wordmark" href="index.html">SOUTH<span class="dot">.</span>BYTE</a><div class="tagline">AI Governance &amp; IT-Beratung</div></header>
 <p><a href="index.html">← Übersicht</a></p>
 <h1>Qwen3-TTS-12Hz-1.7B-CustomVoice · aiden</h1>
@@ -359,4 +367,37 @@
  <div class="meta">uml-005 · WER 0.00</div>
 </div>
 <footer><span class="wm">SOUTH<span class="dot">.</span>BYTE</span> · Alle Clips sind KI-generiert (synthetische Sprache). Die Lizenzangaben sind Hinweise auf die jeweiligen Modell-Lizenzen, keine Rechtsberatung — verbindlich sind allein die Lizenztexte der Modellanbieter. · <a href="https://southbyte.de">southbyte.de</a></footer>
-</div></body></html>
+</div>
+<script>
+(function(){
+  function val(td){var s=td.getAttribute('data-sort');if(s===null){var el=td.querySelector('[data-sort]');if(el)s=el.getAttribute('data-sort');}return (s!==null?s:(td.textContent||'')).trim();}
+  function num(t){var m=t.replace(/\u00a0/g,'').replace(/\s+/g,'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?parseFloat(m[0]):null;}
+  function isEmpty(t){return t===''||t==='\u2014'||t==='-';}
+  function sortTable(table,idx,asc){
+    var tb=table.tBodies[0]; if(!tb) return;
+    var rows=Array.prototype.slice.call(tb.rows);
+    var allNum=rows.every(function(r){var c=r.cells[idx];if(!c)return true;var v=val(c);return isEmpty(v)||num(v)!==null;});
+    rows.sort(function(a,b){
+      var av=a.cells[idx]?val(a.cells[idx]):'',bv=b.cells[idx]?val(b.cells[idx]):'';
+      var e1=isEmpty(av),e2=isEmpty(bv);
+      if(e1&&e2)return 0; if(e1)return 1; if(e2)return -1;
+      var r=allNum?((num(av)||0)-(num(bv)||0)):av.localeCompare(bv,'de',{numeric:true});
+      return asc?r:-r;
+    });
+    rows.forEach(function(r){tb.appendChild(r);});
+  }
+  document.querySelectorAll('table.sortable').forEach(function(table){
+    var head=table.tHead; if(!head||!head.rows.length) return;
+    Array.prototype.forEach.call(head.rows[0].cells,function(th,idx){
+      th.setAttribute('title','Klick: sortieren');
+      th.addEventListener('click',function(){
+        var asc=th.getAttribute('aria-sort')!=='ascending';
+        Array.prototype.forEach.call(head.rows[0].cells,function(o){o.removeAttribute('aria-sort');});
+        th.setAttribute('aria-sort',asc?'ascending':'descending');
+        sortTable(table,idx,asc);
+      });
+    });
+  });
+})();
+</script>
+</body></html>

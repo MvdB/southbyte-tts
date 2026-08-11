@@ -99,6 +99,50 @@ CSS = """
  footer .wm{font-family:var(--mono);font-weight:700;letter-spacing:1px;color:var(--text)}
  footer .wm .dot{color:var(--green)}
  audio{height:2rem;vertical-align:middle;margin:.2rem .4rem .2rem 0}
+ @keyframes scanline{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+ .scanline{position:fixed;left:0;top:0;width:100%;height:80px;background:linear-gradient(to bottom,transparent,rgba(0,230,118,.03) 40%,rgba(0,230,118,.07) 50%,rgba(0,230,118,.03) 60%,transparent);pointer-events:none;z-index:0;animation:scanline 8s linear infinite;will-change:transform}
+ @media(prefers-reduced-motion:reduce){.scanline{display:none}}
+ table.sortable th{cursor:pointer;user-select:none}
+ table.sortable th::after{content:' ';opacity:.35;font-size:.75em}
+ table.sortable th[aria-sort=ascending]::after{content:' \\25B2';opacity:.9}
+ table.sortable th[aria-sort=descending]::after{content:' \\25BC';opacity:.9}
+"""
+
+FAVICON = '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb3V0aEJ5dGUiPgogIDx0aXRsZT5Tb3V0aEJ5dGU8L3RpdGxlPgogIDxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iIzA2MEMwQSIvPgogIDx0ZXh0IHg9IjIiIHk9IjIzIgogICAgICAgIGZvbnQtZmFtaWx5PSInQ291cmllciBOZXcnLCBDb25zb2xhcywgJ1NGIE1vbm8nLCBtb25vc3BhY2UiCiAgICAgICAgZm9udC1zaXplPSIxNiIKICAgICAgICBmb250LXdlaWdodD0iNzAwIgogICAgICAgIGxldHRlci1zcGFjaW5nPSIwLjUiPgogICAgPHRzcGFuIGZpbGw9IiNENEVERTAiPlM8L3RzcGFuPjx0c3BhbiBmaWxsPSIjMDBFNjc2Ij4uPC90c3Bhbj48dHNwYW4gZmlsbD0iI0Q0RURFMCI+QjwvdHNwYW4+CiAgPC90ZXh0PgogIDxyZWN0IHg9IjIiIHk9IjI2IiB3aWR0aD0iMjgiIGhlaWdodD0iMS41IiBmaWxsPSIjMDBFNjc2IiBvcGFjaXR5PSIwLjQiLz4KPC9zdmc+Cg==">'
+
+SORT_SCRIPT = """
+<script>
+(function(){
+  function val(td){var s=td.getAttribute('data-sort');if(s===null){var el=td.querySelector('[data-sort]');if(el)s=el.getAttribute('data-sort');}return (s!==null?s:(td.textContent||'')).trim();}
+  function num(t){var m=t.replace(/\\u00a0/g,'').replace(/\\s+/g,'').replace(',','.').match(/-?\\d+(?:\\.\\d+)?/);return m?parseFloat(m[0]):null;}
+  function isEmpty(t){return t===''||t==='\\u2014'||t==='-';}
+  function sortTable(table,idx,asc){
+    var tb=table.tBodies[0]; if(!tb) return;
+    var rows=Array.prototype.slice.call(tb.rows);
+    var allNum=rows.every(function(r){var c=r.cells[idx];if(!c)return true;var v=val(c);return isEmpty(v)||num(v)!==null;});
+    rows.sort(function(a,b){
+      var av=a.cells[idx]?val(a.cells[idx]):'',bv=b.cells[idx]?val(b.cells[idx]):'';
+      var e1=isEmpty(av),e2=isEmpty(bv);
+      if(e1&&e2)return 0; if(e1)return 1; if(e2)return -1;
+      var r=allNum?((num(av)||0)-(num(bv)||0)):av.localeCompare(bv,'de',{numeric:true});
+      return asc?r:-r;
+    });
+    rows.forEach(function(r){tb.appendChild(r);});
+  }
+  document.querySelectorAll('table.sortable').forEach(function(table){
+    var head=table.tHead; if(!head||!head.rows.length) return;
+    Array.prototype.forEach.call(head.rows[0].cells,function(th,idx){
+      th.setAttribute('title','Klick: sortieren');
+      th.addEventListener('click',function(){
+        var asc=th.getAttribute('aria-sort')!=='ascending';
+        Array.prototype.forEach.call(head.rows[0].cells,function(o){o.removeAttribute('aria-sort');});
+        th.setAttribute('aria-sort',asc?'ascending':'descending');
+        sortTable(table,idx,asc);
+      });
+    });
+  });
+})();
+</script>
 """
 
 _MASTHEAD = ('<header class="masthead"><a class="wordmark" href="index.html">'
@@ -112,9 +156,9 @@ def page(title: str, body: str) -> str:
             f'<a href="https://southbyte.de">southbyte.de</a></footer>')
     return (f'<!doctype html><html lang="de"><head><meta charset="utf-8">\n'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            f"<title>{html.escape(title)}</title>\n<style>{CSS}</style></head><body>\n"
-            f'<div class="grid-bg"></div><div class="wrap">\n{_MASTHEAD}\n'
-            f"{body}\n{foot}\n</div></body></html>")
+            f"<title>{html.escape(title)}</title>\n{FAVICON}\n<style>{CSS}</style></head><body>\n"
+            f'<div class="grid-bg"></div><div class="scanline"></div><div class="wrap">\n{_MASTHEAD}\n'
+            f"{body}\n{foot}\n</div>{SORT_SCRIPT}</body></html>")
 
 
 def model_display(tts_model: str) -> str:
@@ -284,6 +328,33 @@ def index_page(runs: list[dict]) -> None:
                                  or s.get("wer_by_category") or {}).get(c))
                 for c in cats])
 
+    # ── Sortierbares Leaderboard: Stimme-als-Zeilen, Name → HF-Card, Bestwert je Spalte grün ──
+    def _hf(tm):
+        base = str(tm).rstrip("/").rsplit("/", 1)[-1]          # '…Qwen--Qwen3-TTS-…' → 'Qwen--Qwen3-TTS-…'
+        return "https://huggingface.co/" + base.replace("--", "/", 1) if "--" in base else ""
+    _lb_cols = [("WER (Cap 1.0)", lambda r: r["summary"].get("wer_capped_mean", r["summary"].get("wer_mean"))),
+                ("WER ungekappt", lambda r: r["summary"].get("wer_mean")),
+                ("WER Whisper", lambda r: (r["rescore"] or {}).get("wer_judge1_mean")),
+                ("WER Voxtral", lambda r: (r["rescore"] or {}).get("wer_judge2_mean")),
+                ("CER", lambda r: r["summary"].get("cer_capped_mean", r["summary"].get("cer_mean"))),
+                ("RTF", lambda r: r["summary"].get("rtf_mean"))]
+    _cbest = [min([g(r) for r in runs if g(r) is not None], default=None) for _, g in _lb_cols]
+    def _vcell(r):
+        hf = _hf(r["summary"].get("tts_model", "")); nm = html.escape(r["title"])
+        lk = f'<a href="{hf}" target="_blank" rel="noopener">{nm}</a>' if hf else nm
+        return (f'<td data-sort="{html.escape(r["title"])}">{lk} '
+                f'<a href="{r["slug"]}.html">anhören ↗</a></td>')
+    _lbh = "<tr><th>Stimme</th>" + "".join(f"<th>{html.escape(l)}</th>" for l, _ in _lb_cols) + "</tr>"
+    _lbb = ""
+    for r in runs:
+        cells = ""
+        for (lbl, g), b in zip(_lb_cols, _cbest):
+            v = g(r); cls = "best" if v is not None and b is not None and v == b else ""
+            cells += f'<td class="{cls}" data-sort="{"" if v is None else v}">{fmt(v)}</td>'
+        _lbb += f"<tr>{_vcell(r)}{cells}</tr>"
+    leaderboard = (f'<div class="tablewrap"><table class="sortable"><thead>{_lbh}</thead>'
+                   f'<tbody>{_lbb}</tbody></table></div>')
+
     head = "".join(f'<th><a href="{r["slug"]}.html">{html.escape(r["title"])}</a></th>'
                    for r in runs)
     body_rows = [("<tr><td>N (Wiederholungen)</td>" +
@@ -325,41 +396,19 @@ def index_page(runs: list[dict]) -> None:
     if any(r["rescore"] for r in runs):
         judge2 = next(r["rescore"]["judge2"] for r in runs if r["rescore"])
         judge_note = (
-            f'<p><b>Judge-Wahl und Kreuzvalidierung:</b> Haupt-Judge ist '
-            f'<b>Whisper large-v3</b>. Er hat granite-speech-4.1-2b abgelöst, nachdem '
-            f'eine Kalibrierung mit <i>bekanntem</i> Audioinhalt granite überführt hat: '
-            f'Ein TTS sprach die bereits ausgeschriebenen Referenztexte, sodass feststand, '
-            f'was im Audio zu hören ist. granite verlor dort systematisch Zahlen — aus '
-            f'„siebzehn Uhr fünfundvierzig" wurde „Der Zug fährt um uhr", aus „eine Million '
-            f'zweihundertfünfzigtausend Euro" ein abgebrochenes „beläuft sich auf eine". '
-            f'Whisper transkribiert diese Fälle korrekt (WER 0.137 gegen 0.147, Wortverlust '
-            f'0.126 gegen 0.143). Sein Schwachpunkt ist umgekehrt die Schreibweise: Ohne '
-            f'Gegenmaßnahme notiert er Zahlen als Ziffern („17.45 Uhr") und macht damit '
-            f'unmessbar, was der Testsatz prüft. Ein Initial-Prompt drängt ihn zu '
-            f'ausgeschriebenen Zahlwörtern und senkt die Ziffernquote von 83&nbsp;% auf '
-            f'33&nbsp;%; seine Beispiele stammen bewusst nicht aus dem Testsatz, sonst '
-            f'souffliert man dem Judge die erwarteten Antworten.</p>'
-            f'<p>Die unteren beiden Zeilen zeigen beide Judges im identischen Protokoll '
-            f'(nur Wiederholung r0, beste WER über refs plus normalisierten Originaltext). '
-            f'{html.escape(judge2)} dient als Gegenprobe, ist aber kein neutraler Maßstab: '
-            f'Er rück-normalisiert aggressiv zu Ziffern und wertet damit eine falsche '
-            f'Verbalisierung als Treffer. Die Spanne zwischen beiden Zeilen ist als '
-            f'Unsicherheitsband zu lesen, nicht als zwei gleichwertige Messungen. '
-            f'Beide Modelle können in Decoder-Endlosschleifen laufen — das ist kein '
-            f'Einzelfehler von granite, sondern generelles Verhalten autoregressiver '
-            f'ASR-Modelle. Solche Fälle werden erkannt, einmal mit leichtem Sampling '
-            f'wiederholt und ansonsten bei WER&nbsp;1.0 gekappt.</p>')
+            f'<p class="note">Haupt-Judge ist <b>Whisper large-v3</b> mit Casing-Prompt (verbalisiert '
+            f'Zahlen, statt „17.45 Uhr" zu notieren). <b>WER Whisper</b> und <b>WER Voxtral</b> zeigen '
+            f'dieselben Clips durch zwei ASR-Modelle — die Spanne ist ein Unsicherheitsband, kein '
+            f'Doppelmaß ({html.escape(judge2)} normalisiert aggressiver zu Ziffern). Endlos-Decoder-Läufe '
+            f'werden erkannt, einmal wiederholt und sonst bei WER&nbsp;1.0 gekappt.</p>')
     body = f"""<h1>Deutscher TTS-Vergleich auf dem DGX Spark</h1>
 <p>{n["n_total"]} Testfälle (<a href="https://github.com/MvdB/southbyte-tts">Testset &amp; Eval-Code</a>),
-Judge: {html.escape(str(n.get("stt_model", "?")))} mit Casing-Prompt. Je Modell/Stimme wird der
-jeweils neueste vollständige Lauf gezeigt (Spalten nach WER sortiert, bester Wert je Zeile
-hervorgehoben; niedriger = besser). Die WER enthält auch STT-Fehler (obere Schranke des
-TTS-Fehlers) — Kategorien-<i>Deltas</i> sind aussagekräftiger als Absolutwerte.
-Leitmetrik ist die je Wiederholung bei 1.0 gekappte WER (Totalersetzung); die Differenz
-zur ungekappten Zeile zeigt, wo einzelne Wiederholungen entgleist sind (ASR-Decoder-Schleifen
-oder TTS-Loop-Babble erzeugen sonst WER&nbsp;≫&nbsp;1 und dominieren den Mittelwert).
-Spaltentitel führen zur Abhörseite mit allen Clips.</p>
+Judge {html.escape(str(n.get("stt_model", "?")))}. Bester Wert je Spalte grün, niedriger = besser;
+Spalten sortierbar. Die WER enthält auch STT-Fehler (obere Schranke) — Kategorien-Deltas sind
+aussagekräftiger als Absolutwerte. Leitmetrik ist die bei 1.0 gekappte WER.</p>
+{leaderboard}
 {judge_note}
+<h2>WER je Kategorie</h2>
 <div class="tablewrap"><table><tr><th>Metrik</th>{head}</tr>{"".join(body_rows)}</table></div>
 <h2>Lizenzhinweise</h2>
 <ul>{lic_items}</ul>"""
