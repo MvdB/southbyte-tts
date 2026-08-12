@@ -85,6 +85,7 @@ CSS = """
    color:var(--text-muted);background:var(--bg-raised)}
  th:first-child,td:first-child{text-align:left}
  td.best{font-weight:700;color:var(--green);background:var(--bg-raised)}
+ td.lic{text-align:left;font-size:.82em;white-space:nowrap}
  .case{border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;margin:.8rem 0;background:var(--bg-card)}
  .case.bad{border-left:6px solid var(--ko)} .case.mid{border-left:6px solid var(--amber)}
  .case.good{border-left:6px solid var(--green)}
@@ -312,21 +313,6 @@ def model_page(run: dict) -> None:
 def index_page(runs: list[dict]) -> None:
     cats = sorted({c for run in runs
                    for c in (run["summary"].get("wer_by_category") or {})})
-    # Leitmetrik ist die je Wiederholung bei 1.0 gekappte WER — die rohe WER
-    # ist nach oben offen, ein einziger ASR-Runaway (WER 36 bei 3.7 s Audio)
-    # wuerde sonst den Mittelwert dominieren. Fallback auf wer_mean fuer
-    # Laeufe vor Einfuehrung des Caps.
-    metrics = ([("WER (Mittel, Cap 1.0)",
-                 lambda s: s.get("wer_capped_mean", s.get("wer_mean"))),
-                ("WER (Mittel, ungekappt)", lambda s: s.get("wer_mean")),
-                ("WER (best-of-N)", lambda s: s.get("wer_best_mean")),
-                ("CER (Cap 1.0)",
-                 lambda s: s.get("cer_capped_mean", s.get("cer_mean"))),
-                ("Realtime-Faktor", lambda s: s.get("rtf_mean"))] +
-               [(f"WER {c}",
-                 lambda s, c=c: (s.get("wer_capped_by_category")
-                                 or s.get("wer_by_category") or {}).get(c))
-                for c in cats])
 
     # ── Sortierbares Leaderboard: Stimme-als-Zeilen, Name → HF-Card, Bestwert je Spalte grün ──
     def _hf(tm):
@@ -349,54 +335,41 @@ def index_page(runs: list[dict]) -> None:
         lk = f'<a href="{hf}" target="_blank" rel="noopener">{nm}</a>' if hf else nm
         return (f'<td data-sort="{html.escape(r["title"])}">{lk} '
                 f'<a href="{r["slug"]}.html">anhören ↗</a></td>')
-    _lbh = "<tr><th>Stimme</th>" + "".join(f"<th>{html.escape(l)}</th>" for l, _ in _lb_cols) + "</tr>"
+    _lbh = ("<tr><th>Stimme</th>"
+            + "".join(f"<th>{html.escape(l)}</th>" for l, _ in _lb_cols)
+            + "<th>Lizenz</th></tr>")
     _lbb = ""
     for r in runs:
         cells = ""
         for (lbl, g), b in zip(_lb_cols, _cbest):
             v = g(r); cls = "best" if v is not None and b is not None and v == b else ""
             cells += f'<td class="{cls}" data-sort="{"" if v is None else v}">{fmt(v)}</td>'
+        lic = html.escape(str(r.get("license") or "—"))
+        cells += f'<td class="lic" data-sort="{lic}">{lic}</td>'
         _lbb += f"<tr>{_vcell(r)}{cells}</tr>"
     leaderboard = (f'<div class="tablewrap"><table class="sortable"><thead>{_lbh}</thead>'
                    f'<tbody>{_lbb}</tbody></table></div>')
 
-    head = "".join(f'<th><a href="{r["slug"]}.html">{html.escape(r["title"])}</a></th>'
-                   for r in runs)
-    body_rows = [("<tr><td>N (Wiederholungen)</td>" +
-                  "".join(f'<td>{r["summary"].get("n_repeats", 1)}</td>' for r in runs) +
-                  "</tr>")]
-    for label, get in metrics:
-        vals = [get(r["summary"]) for r in runs]
-        present = [v for v in vals if v is not None]
-        best = min(present) if present else None
-        tds = "".join(f'<td class="{"best" if v is not None and v == best else ""}">'
-                      f"{fmt(v)}</td>" for v in vals)
-        body_rows.append(f"<tr><td>{html.escape(label)}</td>{tds}</tr>")
-
-    # Sprechtempo bewusst ohne Bestmarkierung: schneller ist nicht besser.
-    # Die Zeile dient dem Erkennen von Ausreissern nach oben (gedehnt) wie
-    # nach unten (gehetzt) und ist die einzige Prosodie-Spur in der Tabelle.
-    if any(r["summary"].get("sec_per_char_median") for r in runs):
-        tds = "".join(f'<td>{fmt(r["summary"].get("sec_per_char_median"), 4)}</td>'
-                      for r in runs)
-        body_rows.append(f"<tr><td>Tempo (s/Zeichen, Median)</td>{tds}</tr>")
-
-    # Zweit-Judge-Zeilen (Kreuzvalidierung; Protokoll: r0, beste WER über
-    # refs + Originaltext — siehe Methodik-Absatz)
-    if any(r["rescore"] for r in runs):
-        judge2 = next(r["rescore"]["judge2"] for r in runs if r["rescore"])
-        for label, key in [(f"WER {runs[0]['summary'].get('stt_model', 'Judge 1')} (r0, refs+Text)", "wer_judge1_mean"),
-                           (f"WER {judge2} (r0, refs+Text)", "wer_judge2_mean")]:
-            vals = [r["rescore"].get(key) if r["rescore"] else None for r in runs]
-            present = [v for v in vals if v is not None]
-            best = min(present) if present else None
-            tds = "".join(f'<td class="{"best" if v is not None and v == best else ""}">'
-                          f"{fmt(v)}</td>" for v in vals)
-            body_rows.append(f"<tr><td>{html.escape(label)}</td>{tds}</tr>")
+    # ── „WER je Kategorie": gleiche Orientierung wie das Leaderboard (Stimme-als-Zeilen,
+    #    Kategorie-Spalten sortierbar, Bestwert je Spalte grün) → Wiedererkennungswert. ──
+    def _catval(r, c):
+        return ((r["summary"].get("wer_capped_by_category")
+                 or r["summary"].get("wer_by_category") or {}).get(c))
+    _catbest = [min([v for r in runs if (v := _catval(r, c)) is not None], default=None)
+                for c in cats]
+    _cath = "<tr><th>Stimme</th>" + "".join(f"<th>{html.escape(c)}</th>" for c in cats) + "</tr>"
+    _catb = ""
+    for r in runs:
+        cells = ""
+        for c, b in zip(cats, _catbest):
+            v = _catval(r, c)
+            cls = "best" if v is not None and b is not None and v == b else ""
+            cells += f'<td class="{cls}" data-sort="{"" if v is None else v}">{fmt(v)}</td>'
+        _catb += f"<tr>{_vcell(r)}{cells}</tr>"
+    cat_table = (f'<div class="tablewrap"><table class="sortable"><thead>{_cath}</thead>'
+                 f'<tbody>{_catb}</tbody></table></div>')
 
     n = runs[0]["summary"]
-    lic_items = "".join(f"<li><b>{html.escape(r['title'])}</b>: {html.escape(r['license'])}</li>"
-                        for r in runs)
     judge_note = ""
     if any(r["rescore"] for r in runs):
         judge2 = next(r["rescore"]["judge2"] for r in runs if r["rescore"])
@@ -414,9 +387,7 @@ aussagekräftiger als Absolutwerte. Leitmetrik ist die bei 1.0 gekappte WER.</p>
 {leaderboard}
 {judge_note}
 <h2>WER je Kategorie</h2>
-<div class="tablewrap"><table><tr><th>Metrik</th>{head}</tr>{"".join(body_rows)}</table></div>
-<h2>Lizenzhinweise</h2>
-<ul>{lic_items}</ul>"""
+{cat_table}"""
     (DOCS / "index.html").write_text(page("Deutscher TTS-Vergleich (DGX Spark)", body),
                                      encoding="utf-8")
 
