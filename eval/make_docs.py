@@ -38,6 +38,30 @@ import soundfile as sf
 REPO = Path(__file__).resolve().parent.parent
 RESULTS = REPO / "results"
 DOCS = REPO / "docs"
+_MODELS_YAML = Path.home() / "southbyte/southbyte-vllm/testplan/config/models.yaml"
+
+
+def _load_models() -> dict:
+    """Release-Datum je TTS-Engine-Repo aus der zentralen models.yaml."""
+    out: dict = {}
+    try:
+        lines = _MODELS_YAML.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return out
+    cur = None
+    for ln in lines:
+        m = re.match(r'\s*-\s*name:\s*"?([^"#\n]+?)"?\s*$', ln)
+        if m:
+            cur = {}
+            out[m.group(1).strip()] = cur
+            continue
+        f = re.match(r'\s+(release_date|license):\s*"?([^"#\n]+?)"?\s*$', ln)
+        if f and cur is not None:
+            cur[f.group(1)] = f.group(2).strip()
+    return out
+
+
+_MODELS = _load_models()
 MIN_CASES = 40  # Testset hat 43 Fälle; alles darunter ist ein Teil-Lauf
 
 # Lizenz-Kurzhinweis je Modell (Substring-Match auf tts_model) — Hinweise,
@@ -335,7 +359,12 @@ def index_page(runs: list[dict]) -> None:
         lk = f'<a href="{hf}" target="_blank" rel="noopener">{nm}</a>' if hf else nm
         return (f'<td data-sort="{html.escape(r["title"])}">{lk} '
                 f'<a href="{r["slug"]}.html">anhören ↗</a></td>')
-    _lbh = ("<tr><th>Stimme</th>"
+    def _relcell(r):
+        repo = _hf(r["summary"].get("tts_model", "")).replace("https://huggingface.co/", "")
+        d = str(_MODELS.get(repo, {}).get("release_date", "") or "")
+        rm = re.match(r"(\d{4})-(\d{2})", d)
+        return f'<td data-sort="{rm.group(1)}{rm.group(2)}">{html.escape(d)}</td>' if rm else '<td>—</td>'
+    _lbh = ("<tr><th>Stimme</th><th>Release</th>"
             + "".join(f"<th>{html.escape(l)}</th>" for l, _ in _lb_cols)
             + "<th>Lizenz</th></tr>")
     _lbb = ""
@@ -346,7 +375,7 @@ def index_page(runs: list[dict]) -> None:
             cells += f'<td class="{cls}" data-sort="{"" if v is None else v}">{fmt(v)}</td>'
         lic = html.escape(str(r.get("license") or "—"))
         cells += f'<td class="lic" data-sort="{lic}">{lic}</td>'
-        _lbb += f"<tr>{_vcell(r)}{cells}</tr>"
+        _lbb += f"<tr>{_vcell(r)}{_relcell(r)}{cells}</tr>"
     leaderboard = (f'<div class="tablewrap"><table class="sortable"><thead>{_lbh}</thead>'
                    f'<tbody>{_lbb}</tbody></table></div>')
 
