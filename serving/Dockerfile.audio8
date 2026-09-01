@@ -1,0 +1,19 @@
+# Audio8-TTS-Preview-0.6b (Architektur arktts) auf DGX Spark (GB10, aarch64).
+# Basis: das Qwen3-TTS-Image — dort sind NGC-torch, das aus Source gebaute
+# torchaudio und soundfile bereits vorhanden. Der Fremdcode des Modells
+# (trust_remote_code) braucht darüber hinaus nichts: geprüft am 01.09.2026
+# gegen spark-qwen3-tts:v1 mit transformers 4.57.3 — Config, Prozessor und
+# Tokenisierung laufen ohne eine einzige Zusatzinstallation.
+FROM spark-qwen3-tts:v1
+
+# Guard wie in den übrigen abgeleiteten Images: schlägt der Import fehl,
+# scheitert schon der Build und nicht erst der Messlauf.
+RUN python3 -c "import torch, torchaudio; assert torch.version.cuda; \
+import torchaudio._extension.utils as u; u._check_cuda_version(); \
+from torchaudio.functional import resample; import soundfile; \
+import transformers; print('Import OK', transformers.__version__)"
+
+COPY server_audio8.py /opt/audio8/server.py
+
+EXPOSE 8009
+ENTRYPOINT ["python3", "/opt/audio8/server.py"]

@@ -1,0 +1,42 @@
+# BreezeBlue/Breeze-TTS-2 auf DGX Spark (GB10, aarch64, sm120).
+#
+# Basis: das Qwen3-TTS-Image (NGC-torch + aus Source gebautes torchaudio).
+#
+# Der Hersteller pinnt torch==2.9.1/torchaudio==2.9.1 und baut sein eigenes
+# Image für flash-attn auf **sm90 (H100)**. Beides passt hier nicht: auf sm120
+# braucht es unser NGC-torch 2.13. Deshalb dasselbe Muster wie bei Chatterbox —
+# --no-deps und die Abhängigkeiten von Hand.
+#
+# flash-attn wird gar nicht gebraucht: es ist nur für den Pfad
+# `attn_implementation="flash_attention_2"` nötig, und infer.py des Herstellers
+# fährt selbst mit "eager". Am 01.09.2026 auf der Maschine belegt: Laden und
+# Synthese laufen mit torch 2.13 auf Kompute-Fähigkeit (12, 1).
+FROM spark-qwen3-tts:v1
+
+# Fester Commit statt master: sonst misst ein Nachbau anderen Code.
+ARG BREEZE_COMMIT=10f961f7b5a242fa6727c3729b72e115d4dfd52c
+
+# qwen_tts ist reines Python (py3-none-any), also aarch64-unkritisch.
+# --no-deps, damit der torch-Pin des Herstellers unser NGC-torch nicht ersetzt.
+RUN pip install --no-cache-dir --no-deps "qwen-tts==0.1.1"
+
+RUN git clone https://github.com/breezeblue-ai/breeze-tts.git /opt/breeze \
+    && cd /opt/breeze \
+    && git checkout "${BREEZE_COMMIT}" \
+    && rm -rf /opt/breeze/.git
+
+# Guard wie in den übrigen abgeleiteten Images: bricht der Import, scheitert
+# schon der Build und nicht erst der Messlauf.
+RUN python3 -c "import torch, torchaudio; assert torch.version.cuda; \
+import torchaudio._extension.utils as u; u._check_cuda_version(); \
+import sys; sys.path.insert(0, '/opt/breeze'); \
+from qwen_tts import Qwen3TTSTokenizer; \
+from models.breeze import BreezeForConditionalGeneration; \
+from breeze_infer.templates import get_template, prepare_inputs; \
+print('Import OK')"
+
+COPY server_breeze.py /opt/breeze_server/server.py
+
+ENV BREEZE_CODE_DIR=/opt/breeze
+EXPOSE 8013
+ENTRYPOINT ["python3", "/opt/breeze_server/server.py"]

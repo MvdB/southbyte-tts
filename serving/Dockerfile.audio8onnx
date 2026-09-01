@@ -1,0 +1,44 @@
+# Audio8 0.1B ONNX INT8 auf DGX Spark (GB10, aarch64).
+#
+# Einziges TTS im Bestand, das NICHT auf torch läuft: die Referenzlaufzeit des
+# Herstellers benutzt ONNX Runtime mit dem CPUExecutionProvider. Deshalb auch
+# kein Aufbau auf spark-qwen3-tts:v1 — das 24-GB-torch-Image wäre hier reiner
+# Ballast. Ein schlankes python:3.12-slim genügt.
+#
+# Die aarch64-Frage, die auf dieser Maschine sonst alles entscheidet, ist hier
+# unkritisch: onnxruntime hat manylinux-aarch64-Räder (geprüft am 01.09.2026,
+# installiert wurde 1.23.2).
+FROM python:3.12-slim
+
+# Auf einen festen Commit gepinnt statt auf master: sonst misst ein späterer
+# Nachbau eine andere Laufzeit als der veröffentlichte Lauf.
+ARG AUDIO8_COMMIT=07e40f5d0b03fc473635ef378654bfb581027ac3
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git libsndfile1 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/Audio8-AI/Audio8_TTS.git /tmp/audio8 \
+    && cd /tmp/audio8 \
+    && git checkout "${AUDIO8_COMMIT}" \
+    && cp -r /tmp/audio8/onnx_runtime_0_1b_int8 /opt/audio8onnx \
+    && rm -rf /tmp/audio8
+
+RUN pip install --no-cache-dir -r /opt/audio8onnx/requirements.txt \
+    && python3 -c "import onnxruntime as o; \
+assert 'CPUExecutionProvider' in o.get_available_providers(); \
+print('onnxruntime OK', o.__version__)"
+
+# Unser Aufsatz: setzt /health und /v1/voices auf die fremde App.
+COPY server_audio8_onnx.py /opt/audio8onnx/server_audio8_onnx.py
+
+ENV PYTHONPATH=/opt/audio8onnx \
+    ARKTTS_MODEL_DIR=/hf_models/Audio8--audio8-TTS-0.1B-ONNX-INT8 \
+    ARKTTS_VOICES_DIR=/voices_onnx \
+    ARKTTS_PRECISION=int8 \
+    ARKTTS_CODEC_PRECISION=fp16 \
+    PORT=8012
+
+WORKDIR /opt/audio8onnx
+EXPOSE 8012
+ENTRYPOINT ["python3", "/opt/audio8onnx/server_audio8_onnx.py"]

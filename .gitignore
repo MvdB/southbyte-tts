@@ -16,3 +16,6 @@ __pycache__/
 .idea/
 .vscode/
 .DS_Store
+
+# Registrierte Codesaetze der ONNX-Laufzeit (Modellartefakte, kein Quelltext)
+voices_onnx/

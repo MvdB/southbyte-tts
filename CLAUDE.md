@@ -18,9 +18,15 @@ Four TTS model adapters, all exposing the **same OpenAI-compatible API** (`POST 
 | `serving/server_qwen3tts.py` | Qwen3-TTS-12Hz (CustomVoice or VoiceDesign via `MODEL_DIR`) | 8002 | `spark-qwen3-tts:v1` |
 | `serving/server_chatterbox.py` | ResembleAI Chatterbox Multilingual V3 | 8003 | `spark-chatterbox:v1` |
 | `serving/server_voxcpm.py` | openbmb/VoxCPM2 | 8004 | `spark-voxcpm:v1` |
+| `serving/server_audio8.py` | Audio8/Audio8-TTS-Preview-0.6b | 8009 | `spark-audio8:v1` |
+| `serving/server_audio8_onnx.py` | Audio8/audio8-TTS-0.1B-ONNX-INT8 | 8012 | `spark-audio8-onnx:v1` |
 | — (vLLM-Omni native) | mistralai/Voxtral-4B-TTS-2603 | 8005 | `spark-voxtral-tts:v1` |
 
 Image layering matters: `Dockerfile.chatterbox` and `Dockerfile.voxcpm` build **FROM `spark-qwen3-tts:v1`** (it already contains NGC torch + source-built torchaudio); `Dockerfile.tn` builds FROM `spark-magpie-tts:v1` and adds German text normalization (pynini has no aarch64 wheel — prebuilt OpenFst/pynini artifacts are required in the build context, see its header). Without the `.tn` layer, Magpie's `apply_TN` is a **silent no-op**. Each derived Dockerfile ends its pip install with an import/CUDA guard (`torch.version.cuda`, torchaudio CUDA check, model import) — keep that when touching dependencies.
+
+`Dockerfile.audio8` also builds **FROM `spark-qwen3-tts:v1`**, but adds no packages at all: the model ships its own remote code (`trust_remote_code`, architecture `arktts`) and needs only torch, torchaudio, soundfile and transformers — all already in the base (verified 2026-09-01 against transformers 4.57.3). It is the **second zero-shot cloning adapter** after Chatterbox, and the only one that also requires a **reference transcript**: a voice is `voices/<name>.wav` *plus* `voices/<name>.txt` with the spoken text. Missing `.txt` is rejected with HTTP 400 and the voice is hidden from `/v1/voices` — silently falling back to reference-free generation would attribute a different voice's numbers to the cloned run. The model has **no language parameter** (its system prompt is a fixed `convert the provided text to speech`); the adapter accepts `language` but ignores it and marks this with the response header `X-Language-Ignored`. Output is **44.1 kHz** where every other adapter emits 24 kHz.
+
+The 0.1B ONNX model is the one adapter that runs **no torch at all**. It ships its own Apache-2.0 reference runtime (`github.com/Audio8-AI/Audio8_TTS`, directory `onnx_runtime_0_1b_int8`) on ONNX Runtime's `CPUExecutionProvider`, and that runtime already serves `/v1/audio/speech`. `server_audio8_onnx.py` therefore **reimplements nothing**: it imports their FastAPI app and bolts on the two endpoints our contract adds — `/health` (the evaluator reads `model` from it; without it `summary.json` records `"?"` and `make_docs.py` names the page wrong) and `/v1/voices`. `Dockerfile.audio8onnx` is consequently **not** built FROM `spark-qwen3-tts:v1` — a 24 GB torch base would be dead weight — but from `python:3.12-slim`, and it pins their repo to a **fixed commit** so a later rebuild measures the same runtime as the published run. A voice here is not a WAV on disk but a **registered code set**: POST `/api/voices/register` with audio plus its exact transcript, persisted in the mounted `voices_onnx/`.
 
 Voxtral is different: no adapter of ours — vLLM-Omni serves `/v1/audio/speech` natively (`Dockerfile.voxtral`, FROM `vllm/vllm-openai:v0.25.1` + `vllm-omni==0.25.0rc1`; the stable 0.24.0 is **broken** for this model — it ignores the input text). Two hard-won platform facts in `vllm-omni/voxtral_tts_stages.yaml` (now in the sibling repo [southbyte-spark-profiles](https://github.com/MvdB/southbyte-spark-profiles); `run_voxtral_tts.sh` mounts it via `$SPARK_PROFILES_DIR`): `enforce_eager` is required on GB10 (CUDA graphs corrupt the audio), and vllm/vllm-omni must match in minor version. The evaluator auto-detects native endpoints via `/v1/models` (sends `model` field, falls back to WAV-length timing).
 
@@ -72,7 +78,7 @@ curl -s http://127.0.0.1:8002/v1/audio/speech -H 'Content-Type: application/json
   -d '{"input": "Guten Morgen!", "voice": "serena", "language": "de"}' -o hallo.wav
 ```
 
-Run the eval (needs the whisper judge on 8007, plus optionally the Voxtral-Mini second judge on 8006):
+Run the eval (needs the whisper judge on 8007 via `serving/run_whisper_judge.sh`, plus the Voxtral-Mini second judge on 8006 via `serving/run_voxtral_mini_judge.sh`). The second judge is **not optional if the run is to be published**: `southbyte-results/feeds.py::load_tts` only picks up run directories that contain a `rescore_judge2.json`, so an un-rescored run is invisible on results.southbyte.de. Until 2026-09-01 no launch script for it existed and it was started by hand:
 
 ```bash
 python eval/roundtrip_eval.py \

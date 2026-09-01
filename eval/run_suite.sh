@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Komplette Eval-Suite: alle Modell/Stimme-Konfigurationen seriell,
 # je N=3 gegen den Whisper-Judge (Port 8007) + Rescoring mit dem
-# Zweit-Judge Voxtral-Mini (Port 8006). Voraussetzungen: beide Judges laufen bereits;
+# Zweit-Judge Voxtral-Mini (Port 8006). Voraussetzungen: beide Judges laufen
+# bereits — serving/run_whisper_judge.sh und serving/run_voxtral_mini_judge.sh;
 # es wird immer nur EIN TTS-Container gleichzeitig gestartet (Unified
 # Memory). Einzelne Konfigurationen duerfen fehlschlagen (kein set -e) —
 # am Ende steht eine Zusammenfassung in $LOG.
@@ -61,7 +62,7 @@ run_config() { # name port voice
 # Ausgangszustand: KEIN TTS-Container darf laufen (Unified Memory —
 # beide Judges + ein TTS passen, mehr nicht).
 log "stoppe evtl. laufende TTS-Container"
-docker stop qwen3-tts chatterbox-tts voxcpm2 voxtral-tts magpie-tts >> "$LOG" 2>&1 || true
+docker stop qwen3-tts chatterbox-tts voxcpm2 voxtral-tts magpie-tts audio8-tts audio8-onnx >> "$LOG" 2>&1 || true
 
 # Magpie-Basisimage aktualisieren (server.py ist eingebacken; bei
 # unveraendertem Code ist das ein Cache-Hit in Sekunden). Danach das
@@ -98,6 +99,36 @@ VOICES_DIR="$REPO/voices" ./serving/run_chatterbox.sh >> "$LOG" 2>&1
 run_config chatterbox-de-f1   8003 de_f1
 run_config chatterbox-default 8003 default
 docker stop chatterbox-tts >> "$LOG" 2>&1
+
+# ── Audio8-TTS 0.6b: default + de_f1 ────────────────────────────────────────
+#    Zum Klonen braucht dieses Modell neben voices/de_f1.wav auch das
+#    Transkript voices/de_f1.txt; ohne das lehnt der Adapter die Stimme ab.
+VOICES_DIR="$REPO/voices" ./serving/run_audio8.sh >> "$LOG" 2>&1
+run_config audio8-de-f1   8009 de_f1
+run_config audio8-default 8009 default
+docker stop audio8-tts >> "$LOG" 2>&1
+
+# ── Audio8 0.1B ONNX INT8 (CPU, kein --gpus) ────────────────────────────────
+#    Stimmen sind hier registrierte Codesaetze, keine Dateien. Die
+#    Registrierung ist idempotent (overwrite) und kostet wenige Sekunden.
+./serving/run_audio8_onnx.sh >> "$LOG" 2>&1
+if wait_ready 8012; then
+  curl -sf --max-time 300 http://127.0.0.1:8012/api/voices/register \
+    -F "audio=@$REPO/voices/de_f1.wav" -F "text=$(cat "$REPO/voices/de_f1.txt")" \
+    -F 'name=de_f1' -F 'overwrite=true' >> "$LOG" 2>&1 \
+    || log "WARNUNG: audio8onnx — Registrierung von de_f1 fehlgeschlagen"
+  docker exec -e PYTHONPATH=/opt/audio8onnx audio8-onnx python3 \
+    /opt/audio8onnx/scripts/register_default_voice.py \
+    --model-dir /hf_models/Audio8--audio8-TTS-0.1B-ONNX-INT8 \
+    --voices-dir /voices_onnx --overwrite >> "$LOG" 2>&1 \
+    || log "WARNUNG: audio8onnx — Registrierung der Standardstimme fehlgeschlagen"
+  curl -sf --max-time 120 -X POST http://127.0.0.1:8012/api/runtime/reload >> "$LOG" 2>&1 || true
+  run_config audio8onnx-de-f1   8012 de_f1
+  run_config audio8onnx-default 8012 default
+else
+  log "FEHLER: audio8onnx — Dienst auf :8012 nicht bereit, uebersprungen"
+fi
+docker stop audio8-onnx >> "$LOG" 2>&1
 
 # ── VoxCPM2 ─────────────────────────────────────────────────────────────────
 ./serving/run_voxcpm.sh >> "$LOG" 2>&1
