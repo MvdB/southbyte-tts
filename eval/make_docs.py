@@ -231,7 +231,10 @@ def discover_runs() -> list[dict]:
         # Lauf, den es fand. Die Marker-Datei liegt beim Lauf, nicht in einer
         # Liste hier, damit sie mit dem Lauf zusammen entsteht und vergeht.
         if (d / NICHT_VEROEFFENTLICHEN).exists():
-            grund = (d / NICHT_VEROEFFENTLICHEN).read_text(encoding="utf-8").strip()
+            # Nur die erste Zeile: die Begruendung darf mehrzeilig sein, eine
+            # mehrzeilige Bauausgabe macht aber jede Pruefung darauf bruechig.
+            grund = (d / NICHT_VEROEFFENTLICHEN).read_text(encoding="utf-8").strip().splitlines()
+            grund = grund[0] if grund else ""
             print(f"nicht veröffentlicht ({grund or 'ohne Begründung'}): {d.name}")
             continue
         s = json.loads(sfile.read_text(encoding="utf-8"))
