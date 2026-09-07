@@ -11,7 +11,7 @@ voice ranked, with all 43 clips to listen to.
 
 ## What it does
 
-Five models, one OpenAI-compatible API — the evaluator only needs a different
+Eight models, one OpenAI-compatible API — the evaluator only needs a different
 `--tts` URL:
 
 | Model | Port | Licence | |
@@ -21,24 +21,45 @@ Five models, one OpenAI-compatible API — the evaluator only needs a different
 | [Chatterbox Multilingual V3](https://github.com/resemble-ai/chatterbox) | 8003 | MIT | Zero-shot voice cloning from a WAV; output carries a Perth watermark |
 | [VoxCPM2](https://github.com/OpenBMB/VoxCPM) | 8004 | Apache-2.0 | No fixed speakers, voice via description |
 | [Voxtral-4B-TTS](https://huggingface.co/mistralai/Voxtral-4B-TTS-2603) | 8005 | **CC BY-NC 4.0** | **Non-commercial.** 20 preset voices; no cloning — the audio-encoder weights are not released |
+| [Audio8-TTS-Preview-0.6b](https://huggingface.co/Audio8/Audio8-TTS-Preview-0.6b) | 8009 | Apache-2.0 | Zero-shot cloning; needs the reference **transcript** alongside the WAV. No language parameter. 44.1 kHz |
+| [audio8-TTS-0.1B-ONNX-INT8](https://huggingface.co/Audio8/audio8-TTS-0.1B-ONNX-INT8) | 8012 | Apache-2.0 | Runs on **ONNX Runtime, CPU** — no torch. A voice is a registered code set, not a file |
+| [Breeze-TTS-2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) | 8013 | **NC (BreezeBlue)** | **Cannot speak German** (card: en/zh only) and non-commercial — measured to document the gap, not for comparison |
 
 And a **German testset that public benchmarks do not cover**: 43 cases probing
 number and date normalization, long compounds, loanwords, umlaut minimal pairs,
 long sentences and names. Each is synthesized, transcribed by a whisper judge and
 scored as WER/CER against accepted verbalizations — no human in the loop.
 
-Current leaders (capped WER, lower is better — full table on the page):
+Leading group (capped WER, lower is better — full table on the page):
 
 | Model · voice | WER |
 |---|---|
-| Qwen3-TTS CustomVoice · `uncle_fu` | **0.156** |
+| Audio8-TTS-Preview-0.6b · `default` | 0.152 |
+| Qwen3-TTS CustomVoice · `uncle_fu` | 0.156 |
+| Audio8-TTS-Preview-0.6b · `de_f1` | 0.157 |
 | Voxtral-4B-TTS · `de_female` | 0.158 |
 | Qwen3-TTS VoiceDesign · `de_male_young` | 0.160 |
 | Magpie **with** the German TN layer · `sofia` | 0.173 |
 | Magpie **without** it · `sofia` | 0.224 |
 
-That last pair is the clearest single result here: the same model, same voice,
-0.05 WER apart — text normalization is worth more than the choice of model.
+**Those top five are one group, not a ranking.** Repeating a configuration moves
+it by about 0.02 WER, so a 0.008 spread carries no signal — read the table as
+"these are indistinguishable", not as places.
+
+Two results in it *are* signal, because they exceed that spread:
+
+- **Magpie with vs. without the German TN layer**: same model, same voice, 0.05
+  apart — text normalization is worth more than the choice of model.
+- **Umlauts**: both Audio8 runs score **0.000** across 6 cases × 3 repeats;
+  every other model has errors there. On the largest category, `normalization`
+  (18 of 43 cases), Audio8 is *not* ahead — 0.298 against 0.285 for `uncle_fu`.
+  Its overall position comes from the easier categories, not the hard one.
+
+And one result the leaderboard position hides: **audio8-TTS-0.1B-ONNX-INT8 needs
+no GPU at all.** On the CPU alone it reaches RTF 1.6–2.0 (about half real time)
+at 0.204 WER cloned / 0.270 with its packaged voice. That is 0.05 worse than its
+0.6b sibling — a real, measurable cost — but it is the only model here that runs
+on a machine without an accelerator.
 
 ## Getting it running
 

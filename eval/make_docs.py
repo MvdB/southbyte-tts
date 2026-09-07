@@ -64,6 +64,11 @@ def _load_models() -> dict:
 _MODELS = _load_models()
 MIN_CASES = 40  # Testset hat 43 Fälle; alles darunter ist ein Teil-Lauf
 
+# Marker im Ergebnisverzeichnis: Lauf bleibt lokal. Inhalt = Begründung,
+# die beim Bau ausgegeben wird — ein stiller Ausschluss wäre schlimmer als
+# gar keiner.
+NICHT_VEROEFFENTLICHEN = ".nicht-veroeffentlichen"
+
 # Lizenz-Kurzhinweis je Modell (Substring-Match auf tts_model) — Hinweise,
 # keine Rechtsberatung; verbindlich sind die Lizenztexte der Anbieter.
 LICENSES = [
@@ -72,6 +77,7 @@ LICENSES = [
     ("VoxCPM", "Apache-2.0"),
     ("magpie", "NVIDIA Open Model License"),
     ("Voxtral", "CC BY-NC 4.0 (nicht-kommerziell)"),
+    ("Audio8", "Apache-2.0"),
 ]
 
 DISCLAIMER = (
@@ -217,6 +223,19 @@ def discover_runs() -> list[dict]:
     for d in sorted(RESULTS.iterdir()):
         sfile = d / "summary.json"
         if not sfile.exists():
+            continue
+        # Ein Lauf kann bewusst gemessen und trotzdem nicht zu veröffentlichen
+        # sein — etwa ein Modell, dessen Lizenz das nicht hergibt, oder eines,
+        # das die Sprache des Testsatzes gar nicht kann. Bis 2026-09-01 gab es
+        # dafür keine Handhabe: make_docs veröffentlichte jeden vollständigen
+        # Lauf, den es fand. Die Marker-Datei liegt beim Lauf, nicht in einer
+        # Liste hier, damit sie mit dem Lauf zusammen entsteht und vergeht.
+        if (d / NICHT_VEROEFFENTLICHEN).exists():
+            # Nur die erste Zeile: die Begruendung darf mehrzeilig sein, eine
+            # mehrzeilige Bauausgabe macht aber jede Pruefung darauf bruechig.
+            grund = (d / NICHT_VEROEFFENTLICHEN).read_text(encoding="utf-8").strip().splitlines()
+            grund = grund[0] if grund else ""
+            print(f"nicht veröffentlicht ({grund or 'ohne Begründung'}): {d.name}")
             continue
         s = json.loads(sfile.read_text(encoding="utf-8"))
         if s.get("n_ok", 0) < MIN_CASES:
@@ -413,6 +432,14 @@ def index_page(runs: list[dict]) -> None:
 Judge {html.escape(str(n.get("stt_model", "?")))}. Bester Wert je Spalte grün, niedriger = besser;
 Spalten sortierbar. Die WER enthält auch STT-Fehler (obere Schranke) — Kategorien-Deltas sind
 aussagekräftiger als Absolutwerte. Leitmetrik ist die bei 1.0 gekappte WER.</p>
+<p class="note"><b>Die Tabelle ist sortiert, aber nicht überall trennscharf.</b> Zwei
+Wiederholungen derselben Konfiguration streuen bei n&nbsp;=&nbsp;3 um rund
+<b>0.02&nbsp;WER</b>. Dazu kommt der Eigenfehler des Judges: auf Kalibrier-Audio, dessen
+Inhalt bekannt ist, kam Whisper auf <b>0.154&nbsp;WER</b> — ein Anhaltspunkt für die
+Größenordnung, kein exakter Sockel für diesen Testsatz, denn Absolutwerte hängen am
+Audiosatz. Abstände in dieser Größenordnung sind Messrauschen —
+die Spitzengruppe ist eine Gruppe, kein Ranking, und ein Platz&nbsp;1 darin ist kein
+belegter Vorsprung.</p>
 {leaderboard}
 {judge_note}
 <h2>WER je Kategorie</h2>
