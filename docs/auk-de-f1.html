@@ -1,0 +1,404 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AuK · de_f1</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJTb3V0aEJ5dGUiPgogIDx0aXRsZT5Tb3V0aEJ5dGU8L3RpdGxlPgogIDxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iIzA2MEMwQSIvPgogIDx0ZXh0IHg9IjIiIHk9IjIzIgogICAgICAgIGZvbnQtZmFtaWx5PSInQ291cmllciBOZXcnLCBDb25zb2xhcywgJ1NGIE1vbm8nLCBtb25vc3BhY2UiCiAgICAgICAgZm9udC1zaXplPSIxNiIKICAgICAgICBmb250LXdlaWdodD0iNzAwIgogICAgICAgIGxldHRlci1zcGFjaW5nPSIwLjUiPgogICAgPHRzcGFuIGZpbGw9IiNENEVERTAiPlM8L3RzcGFuPjx0c3BhbiBmaWxsPSIjMDBFNjc2Ij4uPC90c3Bhbj48dHNwYW4gZmlsbD0iI0Q0RURFMCI+QjwvdHNwYW4+CiAgPC90ZXh0PgogIDxyZWN0IHg9IjIiIHk9IjI2IiB3aWR0aD0iMjgiIGhlaWdodD0iMS41IiBmaWxsPSIjMDBFNjc2IiBvcGFjaXR5PSIwLjQiLz4KPC9zdmc+Cg==">
+<style>
+ :root{--bg:#060C0A;--bg-raised:#0A1410;--bg-card:#0E1A14;--border:#162A1E;--border-hi:#1A5C38;
+   --green:#00E676;--green-dim:#00994A;--amber:#F59E0B;--text:#D4EDE0;--text-muted:#5E8A72;--text-dim:#2E5040;
+   --ko:#FF5A5A;--mono:'Courier New',Consolas,'Cascadia Code','SF Mono',Menlo,monospace;
+   --sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.7}
+ .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+   background-image:linear-gradient(rgba(0,230,118,.15) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(0,230,118,.15) 1px,transparent 1px);background-size:80px 80px}
+ .wrap{position:relative;z-index:1;max-width:80rem;margin:0 auto;padding:2.5rem 1.25rem}
+ .masthead .wordmark{font-family:var(--mono);font-weight:700;font-size:1.4rem;letter-spacing:1.4px;
+   color:var(--text);text-decoration:none}
+ .masthead .wordmark .dot{color:var(--green)}
+ .masthead .tagline{font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;
+   color:var(--text-muted);margin-top:.3rem}
+ h1{font-family:var(--mono);color:var(--text);font-size:1.7rem;margin:1.4rem 0 .4rem}
+ h2{font-family:var(--mono);text-transform:uppercase;letter-spacing:.15em;color:var(--green);
+    border-top:1px solid var(--border-hi);padding-top:.6rem;margin-top:2.4rem}
+ a{color:var(--green)} a:hover{color:var(--green-dim)}
+ .tablewrap{overflow-x:auto}
+ table{border-collapse:collapse;margin:1rem 0}
+ th,td{border:1px solid var(--border);padding:.35rem .6rem;text-align:right}
+ th{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
+   color:var(--text-muted);background:var(--bg-raised)}
+ th:first-child,td:first-child{text-align:left}
+ td.best{font-weight:700;color:var(--green);background:var(--bg-raised)}
+ td.lic{text-align:left;font-size:.82em;white-space:nowrap}
+ .case{border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;margin:.8rem 0;background:var(--bg-card)}
+ .case.bad{border-left:6px solid var(--ko)} .case.mid{border-left:6px solid var(--amber)}
+ .case.good{border-left:6px solid var(--green)}
+ .text{font-weight:600;color:var(--text)}
+ .transcript{color:var(--text-muted);font-style:italic}
+ .prompt{margin:.6rem 0;padding:.6rem .8rem;background:var(--bg-raised);border-left:3px solid var(--green);border-radius:3px}
+ .prompt b{display:block;font-size:.85rem;text-transform:uppercase;letter-spacing:.03em;
+   color:var(--text-muted);margin-bottom:.3rem;font-family:var(--mono)}
+ .prompt code{font-size:.9rem;white-space:pre-wrap;word-break:break-word;color:var(--green)}
+ .meta{color:var(--text-muted);font-size:.85rem}
+ footer{margin-top:3rem;color:var(--text-muted);font-size:.85rem;border-top:1px solid var(--border);padding-top:1rem}
+ footer .wm{font-family:var(--mono);font-weight:700;letter-spacing:1px;color:var(--text)}
+ footer .wm .dot{color:var(--green)}
+ audio{height:2rem;vertical-align:middle;margin:.2rem .4rem .2rem 0}
+ @keyframes scanline{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+ .scanline{position:fixed;left:0;top:0;width:100%;height:80px;background:linear-gradient(to bottom,transparent,rgba(0,230,118,.03) 40%,rgba(0,230,118,.07) 50%,rgba(0,230,118,.03) 60%,transparent);pointer-events:none;z-index:0;animation:scanline 8s linear infinite;will-change:transform}
+ @media(prefers-reduced-motion:reduce){.scanline{display:none}}
+ table.sortable th{cursor:pointer;user-select:none}
+ table.sortable th::after{content:' ';opacity:.35;font-size:.75em}
+ table.sortable th[aria-sort=ascending]::after{content:' \25B2';opacity:.9}
+ table.sortable th[aria-sort=descending]::after{content:' \25BC';opacity:.9}
+</style></head><body>
+<div class="grid-bg"></div><div class="scanline"></div><div class="wrap">
+<header class="masthead"><a class="wordmark" href="index.html">SOUTH<span class="dot">.</span>BYTE</a><div class="tagline">AI Governance &amp; IT-Beratung</div></header>
+<p><a href="index.html">← Übersicht</a></p>
+<h1>AuK · de_f1</h1>
+<p class="meta">Modell: /hf_models/tencent--AuK · Stimme: de_f1 · STT-Judge: whisper-large-v3 · WER 0.496 (Cap 1.0) · CER 0.280 · RTF 2.27 · Tempo 0.0754 s/Zeichen · Lizenz: MIT · Lauf: 2026-09-12_suite_auk-de-f1</p>
+<p class="meta">Je Fall ein Clip (erste von 3 Wiederholung(en)); WER ist der Mittelwert über alle Wiederholungen. Rot ≥ 0.3, Orange ≥ 0.1, Grün &lt; 0.1.</p>
+<div class="prompt"><b>Judge-Prompt</b><code>Alle Zahlen, Daten, Uhrzeiten und Abkürzungen werden als Wörter ausgeschrieben, niemals als Ziffern. Beispiele: acht neun sieben sechs, dreiundzwanzigster März neunzehnhundertachtzig, sechs Uhr zwanzig, zweiundvierzig Komma sieben, achtundneunzig Prozent, Absatz sieben.</code></div>
+<p class="meta">Kreuzvalidiert mit Zweit-Judge voxtral-mini-3b (r0, beste WER über refs+Text): WER 0.467 (Judge 1 im selben Protokoll: 0.446).</p>
+<h2>compound</h2>
+<div class="case bad">
+ <div class="text">Die Wärmepumpenjahresarbeitszahl liegt bei vier.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/comp-006.mp3"></audio></div>
+ <div class="transcript">→ Die warme Pumpe in der Saal liegt bei wir.</div>
+ <div class="transcript">→ Judge 2: Die warme Pumpe in Generalstabes Saal liegt bei Weer. <span class="meta">(WER 1.00)</span></div>
+ <div class="meta">comp-006 · WER 1.20</div>
+</div>
+<div class="case bad">
+ <div class="text">Die Rechtsschutzversicherungsgesellschaften senkten ihre Beiträge.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/comp-001.mp3"></audio></div>
+ <div class="transcript">→ Die Rechtsschutzwürsikerung des Jesusleschpen senkten ihrer Beatrix.</div>
+ <div class="transcript">→ Judge 2: Die Rechtschutzwörter sind gesichert um Jesus Lispen, sankten ihre Bietrig. <span class="meta">(WER 1.00)</span></div>
+ <div class="meta">comp-001 · WER 1.00</div>
+</div>
+<div class="case bad">
+ <div class="text">Der Kieferorthopäde empfahl eine Röntgenuntersuchung.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/comp-005.mp3"></audio></div>
+ <div class="transcript">→ Der Kieferorthopäde empfahl ihr Röntgen an der Suchung.</div>
+ <div class="transcript">→ Judge 2: Der Kieferorthopäde empfahl ihr Röntgenuntersuchung. <span class="meta">(WER 0.20)</span></div>
+ <div class="meta">comp-005 · WER 1.00</div>
+</div>
+<div class="case bad">
+ <div class="text">Die Grafikprozessoreinheit übernimmt die Bildschirmausgabe.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/comp-003.mp3"></audio></div>
+ <div class="transcript">→ Die Grafikprozessorin Hit übernimmt die Bildschirma ausgeb.</div>
+ <div class="transcript">→ Judge 2: Der Graphic Processor in Hit übernahm die Build-Chir-Mausgabe. <span class="meta">(WER 1.00)</span></div>
+ <div class="meta">comp-003 · WER 0.80</div>
+</div>
+<div class="case bad">
+ <div class="text">Das Bundesausbildungsförderungsgesetz wurde novelliert.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/comp-004.mp3"></audio></div>
+ <div class="transcript">→ Das Bundesausbildungs-Forderungsgestes wurde novelliert.</div>
+ <div class="transcript">→ Judge 2: Das Bundeshaushaltsforderungstext wurde novelliert. <span class="meta">(WER 0.25)</span></div>
+ <div class="meta">comp-004 · WER 0.50</div>
+</div>
+<div class="case bad">
+ <div class="text">Der Donaudampfschifffahrtskapitän ging von Bord.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/comp-002.mp3"></audio></div>
+ <div class="transcript">→ Der Donnerdams Schifffahrtskapitän ging von Bord.</div>
+ <div class="transcript">→ Judge 2: Der Donnerdamms Schifffahrtskapitän ging von Bord. <span class="meta">(WER 0.40)</span></div>
+ <div class="meta">comp-002 · WER 0.40</div>
+</div>
+<h2>loanword</h2>
+<div class="case bad">
+ <div class="text">Er verlor sein Portemonnaie im Restaurant.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/loan-002.mp3"></audio></div>
+ <div class="transcript">→ Er war los in Port-Pimone im Restaurant.</div>
+ <div class="transcript">→ Judge 2: Er verlohr in Port-Pimont im Restaurant. <span class="meta">(WER 0.67)</span></div>
+ <div class="meta">loan-002 · WER 0.83</div>
+</div>
+<div class="case bad">
+ <div class="text">Ihr Engagement für das Ensemble war beachtlich.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/loan-001.mp3"></audio></div>
+ <div class="transcript">→ Ihr Engagement for das Ensembling war beach glitch.</div>
+ <div class="transcript">→ Judge 2: Ihr Engagement für das Onsambing war beachtlich. <span class="meta">(WER 0.14)</span></div>
+ <div class="meta">loan-001 · WER 0.57</div>
+</div>
+<div class="case bad">
+ <div class="text">Zum Espresso gab es ein Stück Zucchinikuchen.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/loan-006.mp3"></audio></div>
+ <div class="transcript">→ Zum Espresso gab es in Stuck Suche Nikutschen.</div>
+ <div class="transcript">→ Judge 2: Zum Espresso gab es in Stuttgart zu wenig Kuchen. <span class="meta">(WER 0.71)</span></div>
+ <div class="meta">loan-006 · WER 0.57</div>
+</div>
+<div class="case mid">
+ <div class="text">Das Update wird über die Cloud eingespielt.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/loan-003.mp3"></audio></div>
+ <div class="transcript">→ Das Update wird über die Cloud in gespielt.</div>
+ <div class="transcript">→ Judge 2: Das Update wird über die Cloud in die Spielwelt. <span class="meta">(WER 0.43)</span></div>
+ <div class="meta">loan-003 · WER 0.29</div>
+</div>
+<div class="case mid">
+ <div class="text">Unser Team reviewt die Pull-Requests im Daily.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/loan-004.mp3"></audio></div>
+ <div class="transcript">→ Anser Team reviewed die Pull-Requests im Daily.</div>
+ <div class="transcript">→ Judge 2: On the team reviewed DiPull requested him daily. <span class="meta">(WER 0.86)</span></div>
+ <div class="meta">loan-004 · WER 0.25</div>
+</div>
+<div class="case mid">
+ <div class="text">Die Machine-Learning-Pipeline läuft auf dem neuen Server.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/loan-005.mp3"></audio></div>
+ <div class="transcript">→ Die Machine Learning Pipeline läuft auf dem Nüun Server.</div>
+ <div class="transcript">→ Judge 2: Die Machine Learning Pipeline Luft of dem NUON Server <span class="meta">(WER 0.33)</span></div>
+ <div class="meta">loan-005 · WER 0.11</div>
+</div>
+<h2>longform</h2>
+<div class="case bad">
+ <div class="text">Für das Rezept brauchen Sie 250 g Mehl, 3 Eier, 125 ml Milch, eine Prise Salz und 2 EL Zucker.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/long-002.mp3"></audio></div>
+ <div class="transcript">→ Vor das Rezept brauchst du 20,5 g Mehl, 3 Jahre, 25 ml Milch, 1,5 Tee Salz und 2 EL Zucker.</div>
+ <div class="transcript">→ Judge 2: Für das Rezept braucht man 2050 g Mehl, 3 Jahre 25 ml Mech, 1,5 l Salz und 2 l Zucker. <span class="meta">(WER 0.50)</span></div>
+ <div class="meta">long-002 · WER 0.75</div>
+</div>
+<div class="case mid">
+ <div class="text">Haben Sie die Unterlagen erhalten? Falls nicht, senden wir sie erneut. Bestätigen Sie bitte den Empfang!</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/long-003.mp3"></audio></div>
+ <div class="transcript">→ Haben Sie die Anlage erhören? Falls nicht, senden wir sie erneut. Besten Sie bietet den Empfang.</div>
+ <div class="transcript">→ Judge 2: Haben Sie die Anträge erhalten? Falls nicht, senden wir sie an Sie erneut. Beste, den Sie bietet den Empfang. <span class="meta">(WER 0.38)</span></div>
+ <div class="meta">long-003 · WER 0.25</div>
+</div>
+<div class="case mid">
+ <div class="text">Obwohl die Ergebnisse, die das Team nach monatelanger Arbeit vorgelegt hatte, überzeugend waren, entschied sich der Vorstand, der seit Jahren auf Sicherheit bedacht war, gegen das Projekt.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/long-001.mp3"></audio></div>
+ <div class="transcript">→ Obwohl die Ergönis, die das Team nicht monatelanger Akkord vorgelegt hatte, übersiegend waren, entschied sich der Vorstand, der seit Jahren auf schicker Hietet bedacht war, gegen das Projekt.</div>
+ <div class="transcript">→ Judge 2: Obwohl die Ergenis, die das Team nicht monatelang ackernt vorgelegt hatten, übersehend waren, entsicherte sich der Vorstand, der seit Jahren auf Schikurhiet bedacht war, gegen das Projekt. <span class="meta">(WER 0.30)</span></div>
+ <div class="meta">long-001 · WER 0.22</div>
+</div>
+<div class="case mid">
+ <div class="text">„Kommen Sie herein“, sagte sie, „und schließen Sie bitte die Tür.“</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/long-004.mp3"></audio></div>
+ <div class="transcript">→ &quot;Kommen Sie hier, sagt sie, und schließen Sie bitte die Tür.&quot;</div>
+ <div class="transcript">→ Judge 2: &quot;Kommen Sie herein,&quot; sagte sie, &quot;und schließen Sie bitte die Tür.&quot; <span class="meta">(WER 0.00)</span></div>
+ <div class="meta">long-004 · WER 0.18</div>
+</div>
+<h2>names</h2>
+<div class="case bad">
+ <div class="text">Der ICE hält in Fürth, Würzburg und Bietigheim-Bissingen.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/name-001.mp3"></audio></div>
+ <div class="transcript">→ Die Reis hält in Forth, Wörth und Bietigheim besitzen.</div>
+ <div class="transcript">→ Judge 2: Die Reise hielt in Forth, Worcester und Bithica in Bithynien. <span class="meta">(WER 0.89)</span></div>
+ <div class="meta">name-001 · WER 0.56</div>
+</div>
+<div class="case bad">
+ <div class="text">Herr Nguyen und Frau Kowalczyk leiten die Abteilung gemeinsam.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/name-003.mp3"></audio></div>
+ <div class="transcript">→ Herr Nien und Frau Kauzik lehten die Abteilung gemessen.</div>
+ <div class="transcript">→ Judge 2: Herr Nien und Frau Kowalski litten die Abteilungen am meisten. <span class="meta">(WER 0.67)</span></div>
+ <div class="meta">name-003 · WER 0.44</div>
+</div>
+<div class="case mid">
+ <div class="text">Die Konferenz findet abwechselnd in Zürich, Straßburg und Kopenhagen statt.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/name-002.mp3"></audio></div>
+ <div class="transcript">→ Die Konferenz findet ab Westland in Zürich, Straßburg und Kopenhagen statt.</div>
+ <div class="transcript">→ Judge 2: Die Konferenz fand ab Westerland in Zürich, Straßburg und Kopenhagen statt. <span class="meta">(WER 0.30)</span></div>
+ <div class="meta">name-002 · WER 0.20</div>
+</div>
+<h2>normalization</h2>
+<div class="case bad">
+ <div class="text">Der Vertrag endet am 01.07.2026.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-003.mp3"></audio></div>
+ <div class="transcript">→ Der Vortrag in Detam, Werdekuen 26.</div>
+ <div class="transcript">→ Judge 2: Der Vorzug in Datum 26. <span class="meta">(WER 0.86)</span></div>
+ <div class="meta">norm-003 · WER 0.86</div>
+</div>
+<div class="case bad">
+ <div class="text">Das regelt § 12 Abs. 3 BGB.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-011.mp3"></audio></div>
+ <div class="transcript">→ Das regelt sich zur Erlaps-CBGB.</div>
+ <div class="transcript">→ Judge 2: Das regelt § 12 Abs. 2 BGB. <span class="meta">(WER 0.17)</span></div>
+ <div class="meta">norm-011 · WER 0.78</div>
+</div>
+<div class="case bad">
+ <div class="text">Sie erreichen uns unter 0511 123456.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-007.mp3"></audio></div>
+ <div class="transcript">→ Sie erregt uns unter 20, 36.</div>
+ <div class="transcript">→ Judge 2: See Eryschen und unter 2366. <span class="meta">(WER 0.83)</span></div>
+ <div class="meta">norm-007 · WER 0.77</div>
+</div>
+<div class="case bad">
+ <div class="text">Wir liefern u. a. Ersatzteile, z. B. Filter.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-009.mp3"></audio></div>
+ <div class="transcript">→ Wir liefern U A, Assads tail, sie b filter.</div>
+ <div class="transcript">→ Judge 2: Wir leben UA, Assad&#x27;s Tale, ZB Filter. <span class="meta">(WER 0.75)</span></div>
+ <div class="meta">norm-009 · WER 0.75</div>
+</div>
+<div class="case bad">
+ <div class="text">Karl V. regierte im 16. Jahrhundert.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-017.mp3"></audio></div>
+ <div class="transcript">→ Karl Walry jährdet im siebzehnjahrhundert.</div>
+ <div class="transcript">→ Judge 2: Karl war im 16. Jahrhundert. <span class="meta">(WER 0.33)</span></div>
+ <div class="meta">norm-017 · WER 0.71</div>
+</div>
+<div class="case bad">
+ <div class="text">Der Motor leistet 150 kW bei 4.500 U/min.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-012.mp3"></audio></div>
+ <div class="transcript">→ Der Motor lässt den 50k bei 4,500 Junin.</div>
+ <div class="transcript">→ Judge 2: Der Motor lastete 50 kW bei 4500 U/min. <span class="meta">(WER 0.40)</span></div>
+ <div class="meta">norm-012 · WER 0.70</div>
+</div>
+<div class="case bad">
+ <div class="text">Sie belegte den 2. Platz beim 100. Jubiläumslauf.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-014.mp3"></audio></div>
+ <div class="transcript">→ Sie belegte den Tuplatz, bier mehrhundert Jubilümslauf.</div>
+ <div class="transcript">→ Judge 2: Sie beleckte den Platz bei Meinhardt Jubiläumslauf. <span class="meta">(WER 0.50)</span></div>
+ <div class="meta">norm-014 · WER 0.62</div>
+</div>
+<div class="case bad">
+ <div class="text">Der Zug fährt um 17:45 Uhr.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-005.mp3"></audio></div>
+ <div class="transcript">→ Der Suck fährt um 17:45 Uhr.</div>
+ <div class="transcript">→ Judge 2: Der Zug fährt um 17:45 Uhr. <span class="meta">(WER 0.00)</span></div>
+ <div class="meta">norm-005 · WER 0.57</div>
+</div>
+<div class="case bad">
+ <div class="text">Dr. Weber wohnt in der Hauptstr. 5.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-008.mp3"></audio></div>
+ <div class="transcript">→ Dr. Webber wohnt in der Hopstar Five.</div>
+ <div class="transcript">→ Judge 2: Dr. Weber wound in der Hopestar Five. <span class="meta">(WER 0.43)</span></div>
+ <div class="meta">norm-008 · WER 0.57</div>
+</div>
+<div class="case bad">
+ <div class="text">Das Gerät kostet 3,50 €.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-001.mp3"></audio></div>
+ <div class="transcript">→ Das Gerät kostet drei fiftig Jahre.</div>
+ <div class="transcript">→ Judge 2: Das Gerät kostet 350€. <span class="meta">(WER 0.40)</span></div>
+ <div class="meta">norm-001 · WER 0.44</div>
+</div>
+<div class="case bad">
+ <div class="text">Der Schaden beläuft sich auf 1.250.000 Euro.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-002.mp3"></audio></div>
+ <div class="transcript">→ Der Schaden belüft sich auf hann, zwanzigfigtytausend Euro.</div>
+ <div class="transcript">→ Judge 2: Der Schaden belief sich auf 125.000 Euro. <span class="meta">(WER 0.33)</span></div>
+ <div class="meta">norm-002 · WER 0.44</div>
+</div>
+<div class="case bad">
+ <div class="text">Das Gebäude stammt aus dem Jahr 1897.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-016.mp3"></audio></div>
+ <div class="transcript">→ Das Gobiastamt aus dem Jahr 1897</div>
+ <div class="transcript">→ Judge 2: Das Gobias-Stamm stammt aus dem Jahr 1897. <span class="meta">(WER 0.29)</span></div>
+ <div class="meta">norm-016 · WER 0.43</div>
+</div>
+<div class="case bad">
+ <div class="text">Am 3. Oktober ist Feiertag.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-004.mp3"></audio></div>
+ <div class="transcript">→ Am Theo Toga ist feiertag.</div>
+ <div class="transcript">→ Judge 2: Amthio Toga ist für Ihr Tag. <span class="meta">(WER 1.00)</span></div>
+ <div class="meta">norm-004 · WER 0.40</div>
+</div>
+<div class="case bad">
+ <div class="text">Die Müller GmbH &amp; Co. KG hat ihren Sitz in Hannover.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-010.mp3"></audio></div>
+ <div class="transcript">→ Die Müller Jingen Kokeji hat ihren Sitz in Hannover.</div>
+ <div class="transcript">→ Judge 2: Die Mühle Jingen-Ko-Keji hat ihren Sitz in Hannover. <span class="meta">(WER 0.40)</span></div>
+ <div class="meta">norm-010 · WER 0.36</div>
+</div>
+<div class="case bad">
+ <div class="text">Die Sitzung dauert von 9:00 bis 10:30 Uhr.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-006.mp3"></audio></div>
+ <div class="transcript">→ Die Sitzung dauert von neunthundert bis zehnzertig Uhr.</div>
+ <div class="transcript">→ Judge 2: Die Sitzung dauert von 9:00 bis 10:30 Uhr. <span class="meta">(WER 0.00)</span></div>
+ <div class="meta">norm-006 · WER 0.33</div>
+</div>
+<div class="case mid">
+ <div class="text">Die Strecke ist 12,7 km lang.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-013.mp3"></audio></div>
+ <div class="transcript">→ Die Strecke ist zwölf, sieben Kim lang.</div>
+ <div class="transcript">→ Judge 2: Die Strecke ist 12,7 km lang. <span class="meta">(WER 0.00)</span></div>
+ <div class="meta">norm-013 · WER 0.25</div>
+</div>
+<div class="case mid">
+ <div class="text">Die Quote stieg um 4,5 %.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-015.mp3"></audio></div>
+ <div class="transcript">→ Die Quote stieg um vier, fünf Cent.</div>
+ <div class="transcript">→ Judge 2: Die Quote stieg um 4,5 Cent. <span class="meta">(WER 0.17)</span></div>
+ <div class="meta">norm-015 · WER 0.25</div>
+</div>
+<div class="case mid">
+ <div class="text">Ein Dreiviertel der Belegschaft stimmte zu, also 3/4.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/norm-018.mp3"></audio></div>
+ <div class="transcript">→ Ein Drivetel der Belegschaft stimmte zu, also Trifor.</div>
+ <div class="transcript">→ Judge 2: Ein Driviertel der Ballekskraft stimmte dazu, also drei vor. <span class="meta">(WER 0.44)</span></div>
+ <div class="meta">norm-018 · WER 0.25</div>
+</div>
+<h2>umlaut</h2>
+<div class="case bad">
+ <div class="text">Die Mütter besuchten ihre Mutter.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/uml-004.mp3"></audio></div>
+ <div class="transcript">→ Deine Mutter besuchte ihre Mutter.</div>
+ <div class="transcript">→ Judge 2: Dein Mutter besüßten ihr Matte. <span class="meta">(WER 1.00)</span></div>
+ <div class="meta">uml-004 · WER 0.60</div>
+</div>
+<div class="case bad">
+ <div class="text">Er trank die Maß Helles in Maßen.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/uml-006.mp3"></audio></div>
+ <div class="transcript">→ Ertränk&#x27; die Masselle in Maßen.</div>
+ <div class="transcript">→ Judge 2: Er trank deiner Massen. <span class="meta">(WER 0.71)</span></div>
+ <div class="meta">uml-006 · WER 0.57</div>
+</div>
+<div class="case bad">
+ <div class="text">Schon am Morgen war es schön warm.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/uml-001.mp3"></audio></div>
+ <div class="transcript">→ Schona Morgen war es schon warm.</div>
+ <div class="transcript">→ Judge 2: Shona Morgan war schon warm. <span class="meta">(WER 0.71)</span></div>
+ <div class="meta">uml-001 · WER 0.43</div>
+</div>
+<div class="case mid">
+ <div class="text">In der Höhle war es dunkel wie in der Hölle.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/uml-003.mp3"></audio></div>
+ <div class="transcript">→ In der Hohle war es dunkel wie in der Hohle.</div>
+ <div class="transcript">→ Judge 2: In der Hohle war es dunkel wie in der Hölle. <span class="meta">(WER 0.10)</span></div>
+ <div class="meta">uml-003 · WER 0.20</div>
+</div>
+<div class="case mid">
+ <div class="text">Sie drücken den Knopf, dann drucken wir das Dokument.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/uml-002.mp3"></audio></div>
+ <div class="transcript">→ Sie drücken den Knopf, dann drücken wir das Dokument.</div>
+ <div class="transcript">→ Judge 2: Sie danken den Notf, dann drucken wir das Dokument. <span class="meta">(WER 0.22)</span></div>
+ <div class="meta">uml-002 · WER 0.11</div>
+</div>
+<div class="case good">
+ <div class="text">Die Straße war nass, und er saß draußen im Regen.</div>
+ <div><audio controls preload="none" src="audio/auk-de-f1/uml-005.mp3"></audio></div>
+ <div class="transcript">→ Die Straße war nass und er saß draußen im Regen.</div>
+ <div class="transcript">→ Judge 2: Die Straße war nass und er saß draußen im Regen. <span class="meta">(WER 0.00)</span></div>
+ <div class="meta">uml-005 · WER 0.00</div>
+</div>
+<footer><span class="wm">SOUTH<span class="dot">.</span>BYTE</span> · Alle Clips sind KI-generiert (synthetische Sprache). Die Lizenzangaben sind Hinweise auf die jeweiligen Modell-Lizenzen, keine Rechtsberatung — verbindlich sind allein die Lizenztexte der Modellanbieter. · <a href="https://southbyte.de">southbyte.de</a></footer>
+</div>
+<script>
+(function(){
+  function val(td){var s=td.getAttribute('data-sort');if(s===null){var el=td.querySelector('[data-sort]');if(el)s=el.getAttribute('data-sort');}return (s!==null?s:(td.textContent||'')).trim();}
+  function num(t){var m=t.replace(/\u00a0/g,'').replace(/\s+/g,'').replace(',','.').match(/-?\d+(?:\.\d+)?/);return m?parseFloat(m[0]):null;}
+  function isEmpty(t){return t===''||t==='\u2014'||t==='-';}
+  function sortTable(table,idx,asc){
+    var tb=table.tBodies[0]; if(!tb) return;
+    var rows=Array.prototype.slice.call(tb.rows);
+    var allNum=rows.every(function(r){var c=r.cells[idx];if(!c)return true;var v=val(c);return isEmpty(v)||num(v)!==null;});
+    rows.sort(function(a,b){
+      var av=a.cells[idx]?val(a.cells[idx]):'',bv=b.cells[idx]?val(b.cells[idx]):'';
+      var e1=isEmpty(av),e2=isEmpty(bv);
+      if(e1&&e2)return 0; if(e1)return 1; if(e2)return -1;
+      var r=allNum?((num(av)||0)-(num(bv)||0)):av.localeCompare(bv,'de',{numeric:true});
+      return asc?r:-r;
+    });
+    rows.forEach(function(r){tb.appendChild(r);});
+  }
+  document.querySelectorAll('table.sortable').forEach(function(table){
+    var head=table.tHead; if(!head||!head.rows.length) return;
+    Array.prototype.forEach.call(head.rows[0].cells,function(th,idx){
+      th.setAttribute('title','Klick: sortieren');
+      th.addEventListener('click',function(){
+        var asc=th.getAttribute('aria-sort')!=='ascending';
+        Array.prototype.forEach.call(head.rows[0].cells,function(o){o.removeAttribute('aria-sort');});
+        th.setAttribute('aria-sort',asc?'ascending':'descending');
+        sortTable(table,idx,asc);
+      });
+    });
+  });
+})();
+</script>
+</body></html>
