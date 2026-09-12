@@ -78,6 +78,7 @@ LICENSES = [
     ("magpie", "NVIDIA Open Model License"),
     ("Voxtral", "CC BY-NC 4.0 (nicht-kommerziell)"),
     ("Audio8", "Apache-2.0"),
+    ("AuK", "MIT"),
 ]
 
 DISCLAIMER = (
