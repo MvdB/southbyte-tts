@@ -73,11 +73,37 @@ zehn Minuten Audio).
 4. Demo: Audio rein, Sprecherspuren über der Zeitachse raus.
 5. Ergebnis wie gewohnt nach `results/` und auf die Seite.
 
-## Offene Fragen
+## Runtime: geklärt am 2026-09-28
 
-- **Läuft `nemo-toolkit[asr]` auf GB10/aarch64?** Nicht geprüft. Falls nicht,
-  bleibt `NeMo-Speech.cpp` für die Demo, und die DER-Rechnung braucht einen
-  anderen Weg.
+**aarch64 trägt NeMo.** `nemo-toolkit[asr]` installiert auf dem NGC-Torch-Image
+sauber, Import in 4 s, CUDA verfügbar. Das war das vermutete Hauptrisiko und
+ist keins.
+
+**Aber das PyPI-Paket ist zu alt für dieses Modell.** nemo-toolkit 3.0.0
+scheitert beim Laden mit
+
+```
+ValueError: self_attention_model='rope' is not supported.
+Currently only 'abs_pos', 'rel_pos', and 'no_pos' (or None) are available.
+```
+
+Das Modell erschien am 23.09.2026, das Release davor. Dieselbe Falle wie bei
+Qwen-Image-2.1 auf der Bildseite: Modell da, Release-Paket kennt die
+Architektur nicht.
+
+**Der Hauptzweig kann es**, mit Stand vom Erscheinungstag des Modells. Damit
+lädt das Modell in 1 s (99,2 Mio Parameter, `nemo 3.1.0+cf724ac33`):
+
+```bash
+pip install --no-cache-dir \
+  "nemo_toolkit[asr] @ git+https://github.com/NVIDIA-NeMo/Speech.git@cf724ac337d1ebc7d0dda1e23fb80916f52927a5"
+```
+
+Commit gepinnt, nicht `main` — ein beweglicher Hauptzweig wäre nicht
+reproduzierbar. Dazu braucht es `libsndfile1` und `ffmpeg` im Image sowie
+`Cython` und `packaging` vor der Installation.
+
+## Offene Fragen
 - **Welche Streaming-Latenz messen wir?** Das Modell kann 0,08 s bis 30,4 s
   Puffer. Für eine Aussage im Büro sind zwei Punkte sinnvoll: die empfohlene
   Untergrenze 0,32 s und der Offline-Fall.
