@@ -11,6 +11,11 @@ __pycache__/
 
 # Audio-Artefakte
 *.wav
+# Ausnahme: die Diarisierungs-Szenen sind TESTFIXTURES, keine Artefakte.
+# Ohne sie laesst sich eine gemessene DER nicht reproduzieren — die
+# TTS-Erzeugung ist nicht gesetzt, ein Neubau ergibt aehnliches, aber nicht
+# dasselbe Audio. 2,3 MB fuer vier Szenen.
+!testset/diarisierung/*.wav
 
 # Editors / OS
 .idea/

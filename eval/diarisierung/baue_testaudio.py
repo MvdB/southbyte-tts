@@ -45,14 +45,17 @@ RATE = 16000          # Diarisierungsmodelle arbeiten auf 16 kHz
 STILLE_KURZ = 0.25    # Sekunden zwischen zwei Beitraegen desselben Sprechers
 STILLE_WECHSEL = 0.6  # Sekunden beim Sprecherwechsel — realistische Gespraechspause
 
-# Die Sprecher sind Voice-Design-Stimmen aus server_qwen3tts.py. Fuenf deutsche
-# Stimmen, zwei weibliche und zwei maennliche klar unterscheidbar, dazu eine
-# ruhige — genug fuer bis zu vier Sprecher ohne Verwechslungsgefahr.
+# Die Sprecher sind die BENANNTEN Stimmen des Qwen3-TTS-CustomVoice-Adapters
+# (GET /v1/voices), nicht Voice-Design-Beschreibungen: feste Stimmen sind fuer
+# Diarisierung der sauberere Weg, weil derselbe Sprecher ueber alle Szenen
+# derselbe bleibt. Vier ausgewaehlt, abwechselnd weiblich und maennlich; am
+# selben Satz gemessen sprechen sie unterschiedlich schnell (3,4 bis 5,8 s),
+# sind also auch prosodisch auseinanderzuhalten.
 SPRECHER = {
-    "A": "de_female_news",
-    "B": "de_male_news",
-    "C": "de_female_calm",
-    "D": "de_male_coach",
+    "A": "serena",
+    "B": "dylan",
+    "C": "vivian",
+    "D": "ryan",
 }
 
 # Szenen bewusst gestuft: erst der leichte Fall, dann die harten. Was eine
@@ -104,11 +107,11 @@ SZENEN: dict[str, dict] = {
 }
 
 
-def sprich(tts: str, text: str, stimme: str) -> np.ndarray:
+def sprich(tts: str, text: str, stimme: str) -> np.ndarray:  # noqa: D401
     """Einen Beitrag synthetisieren, als float32-Mono bei RATE."""
     anfrage = json.dumps({
-        "input": text, "voice": "design", "instruct": stimme,
-        "response_format": "wav", "language": "de",
+        "input": text, "voice": stimme,
+        "response_format": "wav", "language": "german",
     }).encode()
     req = urllib.request.Request(f"{tts}/v1/audio/speech", data=anfrage,
                                  headers={"Content-Type": "application/json"})

@@ -1,0 +1,34 @@
+# southbyte-tts — Diarisierung (nvidia/Nemotron-3-Diarization), 2026-09-28.
+#
+# NICHT das PyPI-Paket: nemo-toolkit 3.0.0 scheitert beim Laden dieses Modells
+# mit "self_attention_model='rope' is not supported" — das Modell erschien am
+# 23.09.2026, das Release davor. Der Hauptzweig von NVIDIA-NeMo/Speech kann es,
+# mit Stand vom Erscheinungstag. Commit gepinnt statt 'main', sonst waere ein
+# spaeterer Neubau nicht derselbe Lauf.
+FROM nvcr.io/nvidia/pytorch:26.06-py3
+
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update -qq && apt-get install -y -qq libsndfile1 ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir Cython packaging \
+ && pip install --no-cache-dir \
+      "nemo_toolkit[asr] @ git+https://github.com/NVIDIA-NeMo/Speech.git@cf724ac337d1ebc7d0dda1e23fb80916f52927a5"
+
+# Beleg im Image: faellt das Laden hier durch, scheitert der Build und nicht
+# erst der Messlauf.
+RUN python3 -c "\
+from nemo.collections.asr.models import SortformerEncLabelModel; \
+import nemo, torch; \
+print('diarisierung ok: nemo', nemo.__version__, 'torch', torch.__version__)"
+
+# Das Bewertungsskript des Herstellers dazu: die Modellkarte nennt
+# e2e_diarize_speech.py als Quelle der Wahrheit fuer die DER. Wer eine eigene
+# DER-Rechnung baut, misst am Ende seine eigene Implementierung.
+RUN git clone --depth 1 https://github.com/NVIDIA-NeMo/Speech.git /opt/nemo-speech \
+ && cd /opt/nemo-speech && git fetch --depth 1 origin cf724ac337d1ebc7d0dda1e23fb80916f52927a5 && git checkout cf724ac337d1ebc7d0dda1e23fb80916f52927a5
+
+WORKDIR /opt/diarisierung
