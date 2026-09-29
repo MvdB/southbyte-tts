@@ -8,6 +8,15 @@ TTS serving and German-language evaluation on an NVIDIA DGX Spark (GB10, **aarch
 
 Code comments, docstrings, commit messages, and docs are written in **German** — keep that convention.
 
+Seit 2026-09-28 deckt das Repo **Sprache breiter ab als nur TTS**: mit
+`nvidia/Nemotron-3-Diarization` kommt das erste Modell dazu, das Audio
+analysiert statt es zu erzeugen (`eval/diarisierung/`). Die STT-Judges
+(Whisper, Voxtral) wohnten ohnehin schon hier. Das Testmaterial der
+Diarisierung entsteht aus den TTS-Stimmen dieses Repos — deshalb hier und
+nicht in einem eigenen Repo. Kommt ein drittes Analyse-Modell dazu
+(Sprecher-Identifikation, VAD), waere eine Umbenennung auf `southbyte-speech`
+ehrlicher, als den Namen weiter zu dehnen.
+
 ## Architecture
 
 Four TTS model adapters, all exposing the **same OpenAI-compatible API** (`POST /v1/audio/speech`, `GET /v1/voices`, `GET /health`, WAV mono 16-bit out), so the evaluator only needs a different `--tts` URL:
