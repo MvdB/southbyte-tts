@@ -86,8 +86,9 @@ git — regenerate it with `eval/make_judge_calib.sh` before comparing.
 and 0.154 on another — same model, same prompt. Numbers are comparable only
 *within* one set, so always re-measure the incumbent alongside the candidate.
 
-Latest set: whisper 0.154 WER / 28 % digit rate, voxtral-mini-3b 0.208 / 67 %,
-voxtral-realtime-4b 0.231 / 83 %.
+Latest set: whisper 0.154 WER / 28 % digit rate (re-measured 2026-10-24, unchanged),
+granite-speech-5.0-2b 0.118 / 6 %, voxtral-mini-3b 0.208 / 67 %, voxtral-realtime-4b
+0.231 / 83 %.
 
 **Rejected, and why:**
 
@@ -101,6 +102,14 @@ voxtral-realtime-4b 0.231 / 83 %.
   28 %.
 - **granite-speech-plus** does not run at all: vLLM 0.25.1 fails with
   `Failed to apply prompt replacement for mm_items['audio'][0]`.
+- **granite-speech-5.0-2b** (2026-10-24) is the most literal judge measured so
+  far — lowest WER and only 6 % digits — but it still drops sentence-final
+  numbers, in 2 of 30 clips: *"Das Gebäude stammt aus dem Jahr"* with the year
+  missing (whisper: *"1897"*), *"Dr. Weber wohnt in der Hauptstraße"* without the
+  *"fünf"*. The 4.1 failure mode, rarer but not gone. To load at all it needs a
+  local `model.safetensors.index.json`: the repo also ships `out_llm.safetensors`
+  with a single stray `bias` tensor that transformers ignores and vLLM 0.31 tries
+  to load (`--ignore-patterns` only applies to hub downloads).
 
 Two rules that came out of this:
 
