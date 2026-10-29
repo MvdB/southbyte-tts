@@ -79,6 +79,7 @@ LICENSES = [
     ("Voxtral", "CC BY-NC 4.0 (nicht-kommerziell)"),
     ("Audio8", "Apache-2.0"),
     ("AuK", "MIT"),
+    ("phonon", "CC BY-NC 4.0 (nicht-kommerziell)"),
 ]
 
 DISCLAIMER = (
