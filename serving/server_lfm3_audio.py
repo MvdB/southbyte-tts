@@ -50,6 +50,9 @@ RATE = 24_000
 
 app = FastAPI(title="lfm3-audio", version="0.1.0")
 model = processor = codec = None
+# LFM3-Omni-2B laedt mit demselben Code; seine Karte steuert die Ausgabeart aber ueber
+# generation_mode statt ueber suppress_mixed/suppress_audio_out. Nur ASR wird hier genutzt.
+OMNI = "Omni" in " ".join(__import__("json").load(open(os.path.join(MODEL_PATH, "config.json"))).get("architectures", []))
 
 
 class SpeechRequest(BaseModel):
@@ -101,6 +104,8 @@ def voices() -> dict:
 def speech(req: SpeechRequest) -> Response:
     if model is None:
         raise HTTPException(503, "Modell lädt noch")
+    if OMNI:
+        raise HTTPException(400, "Für LFM3-Omni bedient dieser Adapter nur die Transkription")
     if req.response_format != "wav":
         raise HTTPException(400, f"Nur 'wav' unterstützt, nicht '{req.response_format}'")
     if req.voice not in STIMMEN:
@@ -155,8 +160,8 @@ async def transcriptions(file: UploadFile = File(...), model_name: str | None = 
         if temperature > 0:
             kw["temperature"] = float(temperature)
         with torch.no_grad():
-            out = model.generate(**inputs, max_new_tokens=grenze, suppress_mixed=True, suppress_audio_out=True,
-                                 return_dict_in_generate=True, **kw)
+            modus = {"generation_mode": "text"} if OMNI else {"suppress_mixed": True, "suppress_audio_out": True}
+            out = model.generate(**inputs, max_new_tokens=grenze, return_dict_in_generate=True, **modus, **kw)
     text = processor.decode(out.sequences[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
     return JSONResponse({"text": text}, headers={"X-Prompt-Ignored": "1" if prompt else "0"})
 
