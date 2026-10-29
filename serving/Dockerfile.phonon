@@ -1,0 +1,26 @@
+# phonon-40m (gradium) auf DGX Spark (GB10, aarch64).
+#
+# Laeuft ueber ptts, die Laufzeit des Herstellers (Rust, GGUF, CPU) — kein
+# torch, deshalb wie Audio8-ONNX auf python:3.12-slim statt auf dem
+# 24-GB-Image spark-qwen3-tts:v1. ptts hat ein manylinux-aarch64-Rad
+# (geprueft am 29.10.2026: ptts-0.5.0-cp39-abi3-manylinux_2_17_aarch64).
+#
+# Auf eine feste Version gepinnt: die Textnormalisierung steckt in der
+# Laufzeit, ein spaeterer Nachbau mit anderer Version misst etwas anderes.
+FROM python:3.12-slim
+
+ARG PTTS_VERSION=0.5.0
+
+RUN pip install --no-cache-dir "ptts==${PTTS_VERSION}" fastapi "uvicorn[standard]" numpy \
+    && python3 -c "import ptts; print('ptts OK', ptts.__version__, ptts.available_devices(), ptts.available_quants())"
+
+COPY server_phonon.py /opt/phonon/server_phonon.py
+
+ENV PHONON_MODEL=/hf_models/gradium--phonon-40m-de \
+    PHONON_VOICES=/hf_models/gradium--phonon-voices/voices.jsonl \
+    PHONON_QUANT=q8 \
+    PHONON_LANG=de \
+    PORT=8015
+
+EXPOSE 8015
+ENTRYPOINT ["python3", "/opt/phonon/server_phonon.py"]
