@@ -80,6 +80,7 @@ LICENSES = [
     ("Audio8", "Apache-2.0"),
     ("AuK", "MIT"),
     ("phonon", "CC BY-NC 4.0 (nicht-kommerziell)"),
+    ("LFM3-Audio", "LFM Open License 1.0 (kommerziell nur unter 10 Mio. USD Jahresumsatz)"),
 ]
 
 DISCLAIMER = (

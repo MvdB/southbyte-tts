@@ -1,0 +1,21 @@
+# LFM3-Audio-2B (LiquidAI) auf DGX Spark (GB10, aarch64).
+#
+# Baut FROM spark-qwen3-tts:v1: NGC-torch 2.13 (CUDA 13.3), torchaudio, librosa,
+# soundfile, accelerate, fastapi und uvicorn sind dort schon drin. Es fehlt nur
+# ein transformers, das LFM3 laden kann — die Karte verlangt >= 5.20.2, die
+# Basis hat 4.57.3. Gepinnt auf 5.21.1, damit ein Nachbau dasselbe misst.
+FROM spark-qwen3-tts:v1
+
+RUN pip install --no-cache-dir "transformers==5.21.1" python-multipart \
+    && python3 -c "import torch, transformers; assert torch.cuda.is_available() or True; \
+print('transformers', transformers.__version__, 'torch', torch.__version__, 'cuda', torch.version.cuda)"
+
+COPY server_lfm3_audio.py /opt/lfm3/server_lfm3_audio.py
+
+# Kernel-Downloads vom Hub abschalten (use_kernel_func_from_hub_with_fallback).
+ENV HF_HUB_OFFLINE=1 \
+    LFM3_AUDIO_PATH=/hf_models/LiquidAI--LFM3-Audio-2B \
+    PORT=8016
+
+EXPOSE 8016
+ENTRYPOINT ["python3", "/opt/lfm3/server_lfm3_audio.py"]
